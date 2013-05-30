@@ -18,6 +18,8 @@ package android.view;
 
 import android.animation.AnimatorInflater;
 import android.animation.StateListAnimator;
+import android.annotation.DrawableRes;
+import android.annotation.IdRes;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -1645,6 +1647,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
      * @see #setId(int)
      * @see #getId()
      */
+    @IdRes
     @ViewDebug.ExportedProperty(resolveId = true)
     int mID = NO_ID;
 
@@ -6059,7 +6062,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
      * @param id The labeled view id.
      */
     @RemotableViewMethod
-    public void setLabelFor(int id) {
+    public void setLabelFor(@IdRes int id) {
         if (mLabelForId == id) {
             return;
         }
@@ -16260,7 +16263,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
      * @attr ref android.R.styleable#View_background
      */
     @RemotableViewMethod
-    public void setBackgroundResource(int resid) {
+    public void setBackgroundResource(@DrawableRes int resid) {
         if (resid != 0 && resid == mBackgroundResource) {
             return;
         }
@@ -17088,7 +17091,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
      * @param id the id of the view to be found
      * @return the view of the specified id, null if cannot be found
      */
-    protected View findViewTraversal(int id) {
+    protected View findViewTraversal(@IdRes int id) {
         if (id == mID) {
             return this;
         }
@@ -17128,7 +17131,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
      * @return The view that has the given id in the hierarchy or null
      */
     @Nullable
-    public final View findViewById(int id) {
+    public final View findViewById(@IdRes int id) {
         if (id < 0) {
             return null;
         }
@@ -17243,7 +17246,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
      *
      * @attr ref android.R.styleable#View_id
      */
-    public void setId(int id) {
+    public void setId(@IdRes int id) {
         mID = id;
         if (mID == View.NO_ID && mLabelForId != View.NO_ID) {
             mID = generateViewId();
@@ -17283,6 +17286,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
      * @see #findViewById(int)
      * @attr ref android.R.styleable#View_id
      */
+    @IdRes
     @ViewDebug.CapturedViewProperty
     public int getId() {
         return mID;

@@ -20,6 +20,9 @@ import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.StringDef;
+import android.annotation.StringRes;
+import android.annotation.StyleRes;
+import android.annotation.StyleableRes;
 import android.annotation.SystemApi;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -364,7 +367,7 @@ public abstract class Context {
      *
      * @param resId Resource id for the CharSequence text
      */
-    public final CharSequence getText(int resId) {
+    public final CharSequence getText(@StringRes int resId) {
         return getResources().getText(resId);
     }
 
@@ -374,7 +377,7 @@ public abstract class Context {
      *
      * @param resId Resource id for the string
      */
-    public final String getString(int resId) {
+    public final String getString(@StringRes int resId) {
         return getResources().getString(resId);
     }
 
@@ -387,7 +390,7 @@ public abstract class Context {
      * @param formatArgs The format arguments that will be used for substitution.
      */
 
-    public final String getString(int resId, Object... formatArgs) {
+    public final String getString(@StringRes int resId, Object... formatArgs) {
         return getResources().getString(resId, formatArgs);
     }
 
@@ -449,7 +452,7 @@ public abstract class Context {
      *
      * @param resid The style resource describing the theme.
      */
-    public abstract void setTheme(int resid);
+    public abstract void setTheme(@StyleRes int resid);
 
     /** @hide Needed for some internal implementation...  not public because
      * you can't assume this actually means anything. */
@@ -483,7 +486,7 @@ public abstract class Context {
      * @see Resources.Theme#obtainStyledAttributes(int, int[])
      */
     public final TypedArray obtainStyledAttributes(
-            int resid, int[] attrs) throws Resources.NotFoundException {
+            @StyleableRes int resid, int[] attrs) throws Resources.NotFoundException {
         return getTheme().obtainStyledAttributes(resid, attrs);
     }
 

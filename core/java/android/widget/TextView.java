@@ -17,8 +17,12 @@
 package android.widget;
 
 import android.R;
+import android.annotation.DrawableRes;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.StringRes;
+import android.annotation.StyleRes;
+import android.annotation.XmlRes;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -2139,7 +2143,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @attr ref android.R.styleable#TextView_drawableBottom
      */
     @android.view.RemotableViewMethod
-    public void setCompoundDrawablesWithIntrinsicBounds(int left, int top, int right, int bottom) {
+    public void setCompoundDrawablesWithIntrinsicBounds(@DrawableRes int left,
+            @DrawableRes int top, @DrawableRes int right, @DrawableRes int bottom) {
         final Context context = getContext();
         setCompoundDrawablesWithIntrinsicBounds(left != 0 ? context.getDrawable(left) : null,
                 top != 0 ? context.getDrawable(top) : null,
@@ -2330,8 +2335,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @attr ref android.R.styleable#TextView_drawableBottom
      */
     @android.view.RemotableViewMethod
-    public void setCompoundDrawablesRelativeWithIntrinsicBounds(int start, int top, int end,
-            int bottom) {
+    public void setCompoundDrawablesRelativeWithIntrinsicBounds(@DrawableRes int start,
+            @DrawableRes int top, @DrawableRes int end, @DrawableRes int bottom) {
         final Context context = getContext();
         setCompoundDrawablesRelativeWithIntrinsicBounds(
                 start != 0 ? context.getDrawable(start) : null,
@@ -2488,7 +2493,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * Sets the text color, size, style, hint color, and highlight color
      * from the specified TextAppearance resource.
      */
-    public void setTextAppearance(Context context, int resid) {
+    public void setTextAppearance(Context context, @StyleRes int resid) {
         TypedArray appearance =
             context.obtainStyledAttributes(resid,
                                            com.android.internal.R.styleable.TextAppearance);
@@ -4128,11 +4133,11 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     @android.view.RemotableViewMethod
-    public final void setText(int resid) {
+    public final void setText(@StringRes int resid) {
         setText(getContext().getResources().getText(resid));
     }
 
-    public final void setText(int resid, BufferType type) {
+    public final void setText(@StringRes int resid, BufferType type) {
         setText(getContext().getResources().getText(resid), type);
     }
 
@@ -4168,7 +4173,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @attr ref android.R.styleable#TextView_hint
      */
     @android.view.RemotableViewMethod
-    public final void setHint(int resid) {
+    public final void setHint(@StringRes int resid) {
         setHint(getContext().getResources().getText(resid));
     }
 
@@ -4572,7 +4577,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @see EditorInfo#extras
      * @attr ref android.R.styleable#TextView_editorExtras
      */
-    public void setInputExtras(int xmlResId) throws XmlPullParserException, IOException {
+    public void setInputExtras(@XmlRes int xmlResId) throws XmlPullParserException, IOException {
         createEditorIfNeeded();
         XmlResourceParser parser = getResources().getXml(xmlResId);
         mEditor.createInputContentTypeIfNeeded();
