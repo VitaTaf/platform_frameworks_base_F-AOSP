@@ -103,7 +103,8 @@ public class PhoneStatusBarPolicy {
                     action.equals(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED)) {
                 updateBluetooth();
             }
-            else if (action.equals(AudioManager.RINGER_MODE_CHANGED_ACTION)) {
+            else if (action.equals(AudioManager.RINGER_MODE_CHANGED_ACTION) ||
+                    action.equals(AudioManager.INTERNAL_RINGER_MODE_CHANGED_ACTION)) {
                 updateVolumeZen();
             }
             else if (action.equals(TelephonyIntents.ACTION_SIM_STATE_CHANGED)) {
@@ -129,6 +130,7 @@ public class PhoneStatusBarPolicy {
         filter.addAction(AlarmManager.ACTION_NEXT_ALARM_CLOCK_CHANGED);
         filter.addAction(Intent.ACTION_SYNC_STATE_CHANGED);
         filter.addAction(AudioManager.RINGER_MODE_CHANGED_ACTION);
+        filter.addAction(AudioManager.INTERNAL_RINGER_MODE_CHANGED_ACTION);
         filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
         filter.addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);
         filter.addAction(TelephonyIntents.ACTION_SIM_STATE_CHANGED);
@@ -222,7 +224,7 @@ public class PhoneStatusBarPolicy {
 
     private void updateAlarm() {
         AlarmManager alarmManager = (AlarmManager) mContext.getSystemService(Context.ALARM_SERVICE);
-	boolean alarmSet = alarmManager.getNextAlarmClock(UserHandle.USER_CURRENT) != null;
+    boolean alarmSet = alarmManager.getNextAlarmClock(UserHandle.USER_CURRENT) != null;
         mService.setIconVisibility(SLOT_ALARM_CLOCK, alarmSet);
     }
 
