@@ -9932,7 +9932,7 @@ public class WindowManagerService extends IWindowManager.Stub
                             }
                         }
 
-                        winAnimator.setSurfaceBoundariesLocked(recoveringMemory);
+                        winAnimator.prepareSurfaceLocked(recoveringMemory);
                     }
 
                     // Check the draw state of the window, but only if it is visible to the user.
