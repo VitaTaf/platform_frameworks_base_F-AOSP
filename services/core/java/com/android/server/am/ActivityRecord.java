@@ -130,6 +130,10 @@ final class ActivityRecord {
     long pauseTime;         // last time we started pausing the activity
     long launchTickTime;    // base time for launch tick messages
     Configuration configuration; // configuration activity was last running in
+    // Overridden configuration by the activity stack
+    // WARNING: Reference points to {@link ActivityStack#mOverrideConfig}, so its internal state
+    // should never be altered directly.
+    Configuration stackConfigOverride;
     CompatibilityInfo compat;// last used compatibility mode
     ActivityRecord resultTo; // who started this entry, so will get our reply
     final String resultWho; // additional identifier for use by resultTo.
@@ -207,6 +211,7 @@ final class ActivityRecord {
                 pw.print(" icon=0x"); pw.print(Integer.toHexString(icon));
                 pw.print(" theme=0x"); pw.println(Integer.toHexString(theme));
         pw.print(prefix); pw.print("config="); pw.println(configuration);
+        pw.print(prefix); pw.print("stackConfigOverride="); pw.println(stackConfigOverride);
         if (resultTo != null || resultWho != null) {
             pw.print(prefix); pw.print("resultTo="); pw.print(resultTo);
                     pw.print(" resultWho="); pw.print(resultWho);
@@ -397,6 +402,8 @@ final class ActivityRecord {
         resolvedType = _resolvedType;
         componentSpecified = _componentSpecified;
         configuration = _configuration;
+        stackConfigOverride = (container != null)
+                ? container.mStack.mOverrideConfig : Configuration.EMPTY;
         resultTo = _resultTo;
         resultWho = _resultWho;
         requestCode = _reqCode;
@@ -1071,10 +1078,7 @@ final class ActivityRecord {
 
     static ActivityRecord isInStackLocked(IBinder token) {
         final ActivityRecord r = ActivityRecord.forToken(token);
-        if (r != null) {
-            return r.task.stack.isInStackLocked(token);
-        }
-        return null;
+        return (r != null) ? r.task.stack.isInStackLocked(r) : null;
     }
 
     static ActivityStack getStackLocked(IBinder token) {
