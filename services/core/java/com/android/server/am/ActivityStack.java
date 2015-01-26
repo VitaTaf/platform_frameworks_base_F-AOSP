@@ -2252,7 +2252,7 @@ final class ActivityStack {
                 }
 
                 final int targetTaskId = targetTask.taskId;
-                mWindowManager.setAppGroupId(target.appToken, targetTaskId);
+                mWindowManager.setAppTask(target.appToken, targetTaskId);
 
                 boolean noOptions = canMoveOptions;
                 final int start = replyChainEnd < 0 ? i : replyChainEnd;
@@ -2277,7 +2277,7 @@ final class ActivityStack {
                     p.setTask(targetTask, null);
                     targetTask.addActivityAtBottom(p);
 
-                    mWindowManager.setAppGroupId(p.appToken, targetTaskId);
+                    mWindowManager.setAppTask(p.appToken, targetTaskId);
                 }
 
                 mWindowManager.moveTaskToBottom(targetTaskId);
@@ -2415,7 +2415,7 @@ final class ActivityStack {
                                 new RuntimeException("here").fillInStackTrace());
                         if (DEBUG_TASKS) Slog.v(TAG, "Pulling activity " + p + " from " + srcPos
                                 + " in to resetting task " + task);
-                        mWindowManager.setAppGroupId(p.appToken, taskId);
+                        mWindowManager.setAppTask(p.appToken, taskId);
                     }
                     mWindowManager.moveTaskToTop(taskId);
                     if (VALIDATE_TOKENS) {
