@@ -90,6 +90,7 @@ import com.android.server.pm.UserManagerService;
 import com.android.server.statusbar.StatusBarManagerInternal;
 import com.android.server.wm.AppTransition;
 import com.android.server.wm.WindowManagerService;
+
 import com.google.android.collect.Lists;
 import com.google.android.collect.Maps;
 
@@ -8258,7 +8259,7 @@ public final class ActivityManagerService extends ActivityManagerNative
     @Override
     public void resizeStack(int stackId, Rect bounds) {
         enforceCallingPermission(android.Manifest.permission.MANAGE_ACTIVITY_STACKS,
-                "resizeStackBox()");
+                "resizeStack()");
         long ident = Binder.clearCallingIdentity();
         try {
             synchronized (this) {
@@ -10131,7 +10132,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                 }
                 final boolean translucentChanged = r.changeWindowTranslucency(true);
                 if (translucentChanged) {
-                    r.task.stack.releaseBackgroundResources();
+                    r.task.stack.releaseBackgroundResources(r);
                     mStackSupervisor.ensureActivitiesVisibleLocked(null, 0);
                 }
                 mWindowManager.setAppFullscreen(token, true);
@@ -10158,7 +10159,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                 }
                 final boolean translucentChanged = r.changeWindowTranslucency(false);
                 if (translucentChanged) {
-                    r.task.stack.convertToTranslucent(r);
+                    r.task.stack.convertActivityToTranslucent(r);
                 }
                 mStackSupervisor.ensureActivitiesVisibleLocked(null, 0);
                 mWindowManager.setAppFullscreen(token, false);
