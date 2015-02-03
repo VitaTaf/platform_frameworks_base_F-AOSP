@@ -2605,6 +2605,8 @@
   <eat-comment />
 
   <public type="attr" name="resizeableActivity" />
+  <public type="attr" name="start" />
+  <public type="attr" name="end" />
 
   <public type="style" name="Widget.Material.Button.Colored" />
 
