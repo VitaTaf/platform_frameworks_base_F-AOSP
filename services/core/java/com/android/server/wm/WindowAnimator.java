@@ -794,6 +794,7 @@ public class WindowAnimator {
             } else if (dumpAll) {
                 pw.print(subPrefix); pw.println("no ScreenRotationAnimation ");
             }
+            pw.println();
         }
 
         pw.println();
