@@ -24,7 +24,6 @@ import android.service.persistentdata.IPersistentDataBlockService;
 import android.service.persistentdata.PersistentDataBlockManager;
 
 import com.android.internal.appwidget.IAppWidgetService;
-import com.android.internal.policy.PolicyManager;
 import com.android.internal.util.Preconditions;
 
 import android.bluetooth.BluetoothManager;
@@ -135,6 +134,7 @@ import android.util.Slog;
 import android.view.DisplayAdjustments;
 import android.view.ContextThemeWrapper;
 import android.view.Display;
+import android.view.PhoneLayoutInflater;
 import android.view.WindowManagerImpl;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.CaptioningManager;
@@ -476,7 +476,7 @@ class ContextImpl extends Context {
 
         registerService(LAYOUT_INFLATER_SERVICE, new ServiceFetcher() {
                 public Object createService(ContextImpl ctx) {
-                    return PolicyManager.makeNewLayoutInflater(ctx.getOuterContext());
+                    return new PhoneLayoutInflater(ctx.getOuterContext());
                 }});
 
         registerService(LOCATION_SERVICE, new ServiceFetcher() {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.internal.policy.impl;
+package com.android.server.policy;
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -26,7 +26,6 @@ import android.os.SystemProperties;
 import android.util.FloatMath;
 import android.util.Log;
 import android.util.Slog;
-import android.util.TimeUtils;
 
 import java.io.PrintWriter;
 
