@@ -135,6 +135,9 @@ public class AudioService extends IAudioService.Stub {
     /** How long to delay before persisting a change in volume/ringer mode. */
     private static final int PERSIST_DELAY = 500;
 
+    /** How long to delay after a volume down event before unmuting a stream */
+    private static final int UNMUTE_STREAM_DELAY = 350;
+
     /**
      * The delay before playing a sound. This small period exists so the user
      * can press another key (non-volume keys, too) to have it NOT be audible.
@@ -205,6 +208,7 @@ public class AudioService extends IAudioService.Stub {
     private static final int MSG_SYSTEM_READY = 21;
     private static final int MSG_PERSIST_MUSIC_ACTIVE_MS = 22;
     private static final int MSG_PERSIST_MICROPHONE_MUTE = 23;
+    private static final int MSG_UNMUTE_STREAM = 24;
     // start of messages handled under wakelock
     //   these messages can only be queued, i.e. sent with queueMsgUnderWakeLock(),
     //   and not with sendMsg(..., ..., SENDMSG_QUEUE, ...)
@@ -1090,9 +1094,9 @@ public class AudioService extends IAudioService.Stub {
             if (ringerMode == AudioManager.RINGER_MODE_VIBRATE) {
                 flags &= ~AudioManager.FLAG_VIBRATE;
             }
-            // Check if the ringer mode changes with this volume adjustment. If
-            // it does, it will handle adjusting the volume, so we won't below
-            final int result = checkForRingerModeChange(aliasIndex, direction, step);
+            // Check if the ringer mode handles this adjustment. If it does we don't
+            // need to adjust the volume further.
+            final int result = checkForRingerModeChange(aliasIndex, direction, step, streamState.mIsMuted);
             adjustVolume = (result & FLAG_ADJUST_VOLUME) != 0;
             // If suppressing a volume adjustment in silent mode, display the UI hint
             if ((result & AudioManager.FLAG_SHOW_SILENT_HINT) != 0) {
@@ -1107,6 +1111,7 @@ public class AudioService extends IAudioService.Stub {
         int oldIndex = mStreamStates[streamType].getIndex(device);
 
         if (adjustVolume && (direction != AudioManager.ADJUST_SAME)) {
+            mAudioHandler.removeMessages(MSG_UNMUTE_STREAM);
 
             // Check if volume update should be send to AVRCP
             if (streamTypeAlias == AudioSystem.STREAM_MUSIC &&
@@ -1148,7 +1153,13 @@ public class AudioService extends IAudioService.Stub {
                 // message to persist).
                 if (streamState.mIsMuted) {
                     // Unmute the stream if it was previously muted
-                    streamState.mute(false);
+                    if (direction == AudioManager.ADJUST_RAISE) {
+                        // unmute immediately for volume up
+                        streamState.mute(false);
+                    } else if (direction == AudioManager.ADJUST_LOWER) {
+                        sendMsg(mAudioHandler, MSG_UNMUTE_STREAM, SENDMSG_QUEUE,
+                                streamTypeAlias, flags, null, UNMUTE_STREAM_DELAY);
+                    }
                 }
                 sendMsg(mAudioHandler,
                         MSG_SET_DEVICE_VOLUME,
@@ -1182,6 +1193,16 @@ public class AudioService extends IAudioService.Stub {
         }
         int index = mStreamStates[streamType].getIndex(device);
         sendVolumeUpdate(streamType, oldIndex, index, flags);
+    }
+
+    // Called after a delay when volume down is pressed while muted
+    private void onUnmuteStream(int stream, int flags) {
+        VolumeStreamState streamState = mStreamStates[stream];
+        streamState.mute(false);
+
+        final int device = getDeviceForStream(stream);
+        final int index = mStreamStates[stream].getIndex(device);
+        sendVolumeUpdate(stream, index, index, flags);
     }
 
     private void setSystemAudioVolume(int oldVolume, int newVolume, int maxVolume, int flags) {
@@ -3088,7 +3109,7 @@ public class AudioService extends IAudioService.Stub {
      * adjusting volume. If so, this will set the proper ringer mode and volume
      * indices on the stream states.
      */
-    private int checkForRingerModeChange(int oldIndex, int direction,  int step) {
+    private int checkForRingerModeChange(int oldIndex, int direction,  int step, boolean isMuted) {
         int result = FLAG_ADJUST_VOLUME;
         int ringerMode = getRingerModeInternal();
 
@@ -3112,6 +3133,15 @@ public class AudioService extends IAudioService.Stub {
                         ringerMode = RINGER_MODE_SILENT;
                     }
                 }
+            } else if (direction == AudioManager.ADJUST_TOGGLE_MUTE
+                    || direction == AudioManager.ADJUST_MUTE) {
+                if (mHasVibrator) {
+                    ringerMode = RINGER_MODE_VIBRATE;
+                } else {
+                    ringerMode = RINGER_MODE_SILENT;
+                }
+                // Setting the ringer mode will toggle mute
+                result &= ~FLAG_ADJUST_VOLUME;
             }
             break;
         case RINGER_MODE_VIBRATE:
@@ -3121,26 +3151,38 @@ public class AudioService extends IAudioService.Stub {
                 break;
             }
             if ((direction == AudioManager.ADJUST_LOWER)) {
-                if (mPrevVolDirection != AudioManager.ADJUST_LOWER) {
+                // This is the case we were muted with the volume turned up
+                if (oldIndex >= 2 * step && isMuted) {
+                    ringerMode = RINGER_MODE_NORMAL;
+                } else if (mPrevVolDirection != AudioManager.ADJUST_LOWER) {
                     if (VOLUME_SETS_RINGER_MODE_SILENT) {
                         ringerMode = RINGER_MODE_SILENT;
                     } else {
                         result |= AudioManager.FLAG_SHOW_VIBRATE_HINT;
                     }
                 }
-            } else if (direction == AudioManager.ADJUST_RAISE) {
+            } else if (direction == AudioManager.ADJUST_RAISE
+                    || direction == AudioManager.ADJUST_TOGGLE_MUTE
+                    || direction == AudioManager.ADJUST_UNMUTE) {
                 ringerMode = RINGER_MODE_NORMAL;
             }
             result &= ~FLAG_ADJUST_VOLUME;
             break;
         case RINGER_MODE_SILENT:
-            if (direction == AudioManager.ADJUST_RAISE) {
+            if (direction == AudioManager.ADJUST_LOWER && oldIndex >= 2 * step && isMuted) {
+                // This is the case we were muted with the volume turned up
+                ringerMode = RINGER_MODE_NORMAL;
+            } else if (direction == AudioManager.ADJUST_RAISE
+                    || direction == AudioManager.ADJUST_TOGGLE_MUTE
+                    || direction == AudioManager.ADJUST_UNMUTE) {
                 if (PREVENT_VOLUME_ADJUSTMENT_IF_SILENT) {
                     result |= AudioManager.FLAG_SHOW_SILENT_HINT;
                 } else {
-                  if (mHasVibrator) {
+                  if (mHasVibrator && direction == AudioManager.ADJUST_RAISE) {
                       ringerMode = RINGER_MODE_VIBRATE;
                   } else {
+                      // If we don't have a vibrator or they were toggling mute
+                      // go straight back to normal.
                       ringerMode = RINGER_MODE_NORMAL;
                   }
                 }
@@ -4339,6 +4381,9 @@ public class AudioService extends IAudioService.Stub {
                                                  Settings.System.MICROPHONE_MUTE,
                                                  msg.arg1,
                                                  msg.arg2);
+                    break;
+                case MSG_UNMUTE_STREAM:
+                    onUnmuteStream(msg.arg1, msg.arg2);
                     break;
             }
         }
