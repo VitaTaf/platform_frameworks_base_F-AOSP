@@ -725,8 +725,7 @@ public class AudioManager {
         int keyCode = event.getKeyCode();
         if (keyCode != KeyEvent.KEYCODE_VOLUME_DOWN && keyCode != KeyEvent.KEYCODE_VOLUME_UP
                 && keyCode != KeyEvent.KEYCODE_VOLUME_MUTE
-                && mVolumeKeyUpTime + AudioService.PLAY_SOUND_DELAY
-                        > SystemClock.uptimeMillis()) {
+                && mVolumeKeyUpTime + AudioSystem.PLAY_SOUND_DELAY > SystemClock.uptimeMillis()) {
             /*
              * The user has hit another key during the delay (e.g., 300ms)
              * since the last volume key up, so cancel any sounds.
@@ -2559,7 +2558,7 @@ public class AudioManager {
             service.requestAudioFocus(new AudioAttributes.Builder()
                         .setInternalLegacyStreamType(streamType).build(),
                     durationHint, mICallBack, null,
-                    MediaFocusControl.IN_VOICE_COMM_FOCUS_ID,
+                    AudioSystem.IN_VOICE_COMM_FOCUS_ID,
                     mContext.getOpPackageName(),
                     AUDIOFOCUS_FLAG_LOCK,
                     null /* policy token */);
@@ -2577,7 +2576,7 @@ public class AudioManager {
     public void abandonAudioFocusForCall() {
         IAudioService service = getService();
         try {
-            service.abandonAudioFocus(null, MediaFocusControl.IN_VOICE_COMM_FOCUS_ID,
+            service.abandonAudioFocus(null, AudioSystem.IN_VOICE_COMM_FOCUS_ID,
                     null /*AudioAttributes, legacy behavior*/);
         } catch (RemoteException e) {
             Log.e(TAG, "Can't call abandonAudioFocusForCall() on AudioService:", e);
