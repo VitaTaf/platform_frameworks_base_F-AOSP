@@ -52,20 +52,15 @@ import android.view.View;
 import android.view.WindowManager;
 import android.view.WindowManagerPolicy;
 import android.view.WindowManager.LayoutParams;
-import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
 import android.view.animation.AnimationUtils;
 import android.view.animation.Transformation;
 
-import com.android.internal.R;
 import com.android.server.wm.WindowManagerService.H;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
-
-class WinAnimatorList extends ArrayList<WindowStateAnimator> {
-}
 
 /**
  * Keep track of animations and surface operations for a single WindowState.
@@ -190,7 +185,7 @@ class WindowStateAnimator {
 
     int mAttrType;
 
-    public WindowStateAnimator(final WindowState win) {
+    WindowStateAnimator(final WindowState win) {
         final WindowManagerService service = win.mService;
 
         mService = service;
@@ -493,7 +488,7 @@ class WindowStateAnimator {
             mService.mPendingRemove.add(mWin);
             mWin.mRemoveOnExit = false;
         }
-        mAnimator.hideWallpapersLocked(mWin);
+        mService.hideWallpapersLocked(mWin);
     }
 
     void hide() {
@@ -534,7 +529,7 @@ class WindowStateAnimator {
     }
 
     // This must be called while inside a transaction.
-    boolean commitFinishDrawingLocked(long currentTime) {
+    boolean commitFinishDrawingLocked() {
         if (DEBUG_STARTING_WINDOW &&
                 mWin.mAttrs.type == WindowManager.LayoutParams.TYPE_APPLICATION_STARTING) {
             Slog.i(TAG, "commitFinishDrawingLocked: " + mWin + " cur mDrawState="
@@ -991,7 +986,7 @@ class WindowStateAnimator {
                     }
                     mSurfaceControl.destroy();
                 }
-                mAnimator.hideWallpapersLocked(mWin);
+                mService.hideWallpapersLocked(mWin);
             } catch (RuntimeException e) {
                 Slog.w(TAG, "Exception thrown when destroying Window " + this
                     + " surface " + mSurfaceControl + " session " + mSession
@@ -1017,7 +1012,7 @@ class WindowStateAnimator {
                     WindowManagerService.logSurface(mWin, "DESTROY PENDING", e);
                 }
                 mPendingDestroySurface.destroy();
-                mAnimator.hideWallpapersLocked(mWin);
+                mService.hideWallpapersLocked(mWin);
             }
         } catch (RuntimeException e) {
             Slog.w(TAG, "Exception thrown when destroying Window "
@@ -1481,7 +1476,7 @@ class WindowStateAnimator {
             hide();
         } else if (w.mAttachedHidden || !w.isOnScreen()) {
             hide();
-            mAnimator.hideWallpapersLocked(w);
+            mService.hideWallpapersLocked(w);
 
             // If we are waiting for this window to handle an
             // orientation change, well, it is hidden, so
@@ -1653,13 +1648,8 @@ class WindowStateAnimator {
         }
         if (DEBUG_VISIBILITY || (DEBUG_STARTING_WINDOW &&
                 mWin.mAttrs.type == WindowManager.LayoutParams.TYPE_APPLICATION_STARTING)) {
-            RuntimeException e = null;
-            if (!WindowManagerService.HIDE_STACK_CRAWLS) {
-                e = new RuntimeException();
-                e.fillInStackTrace();
-            }
             Slog.v(TAG, "performShow on " + this
-                    + ": mDrawState=" + mDrawState + " readyForDisplay="
+                    + ": mDrawState=" + drawStateToString() + " readyForDisplay="
                     + mWin.isReadyForDisplayIgnoringKeyguard()
                     + " starting=" + (mWin.mAttrs.type == TYPE_APPLICATION_STARTING)
                     + " during animation: policyVis=" + mWin.mPolicyVisibility
@@ -1670,7 +1660,8 @@ class WindowStateAnimator {
                     + (mWin.mAppToken != null ? mWin.mAppToken.hidden : false)
                     + " animating=" + mAnimating
                     + " tok animating="
-                    + (mAppAnimator != null ? mAppAnimator.animating : false), e);
+                    + (mAppAnimator != null ? mAppAnimator.animating : false) + " Callers="
+                    + Debug.getCallers(3));
         }
         if (mDrawState == READY_TO_SHOW && mWin.isReadyForDisplayIgnoringKeyguard()) {
             if (SHOW_TRANSACTIONS || DEBUG_ORIENTATION)
