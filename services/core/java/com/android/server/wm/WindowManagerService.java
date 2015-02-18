@@ -796,6 +796,35 @@ public class WindowManagerService extends IWindowManager.Stub
     // For example, when this flag is true, there will be no wallpaper service.
     final boolean mOnlyCore;
 
+    /** Listener to notify activity manager about app transitions. */
+    private final WindowManagerInternal.AppTransitionListener mActivityManagerAppTransitionNotifier
+            = new WindowManagerInternal.AppTransitionListener() {
+
+        @Override
+        public void onAppTransitionFinishedLocked(IBinder token) {
+            AppWindowToken atoken = findAppWindowToken(token);
+            if (atoken == null) {
+                return;
+            }
+            if (atoken.mLaunchTaskBehind) {
+                try {
+                    mActivityManager.notifyLaunchTaskBehindComplete(atoken.token);
+                } catch (RemoteException e) {
+                }
+                atoken.mLaunchTaskBehind = false;
+            } else {
+                atoken.updateReportedVisibilityLocked();
+                if (atoken.mEnteringAnimation) {
+                    atoken.mEnteringAnimation = false;
+                    try {
+                        mActivityManager.notifyEnterAnimationComplete(atoken.token);
+                    } catch (RemoteException e) {
+                    }
+                }
+            }
+        }
+    };
+
     public static WindowManagerService main(final Context context,
             final InputManagerService im,
             final boolean haveInputMethods, final boolean showBootMsgs,
@@ -875,6 +904,7 @@ public class WindowManagerService extends IWindowManager.Stub
         mScreenFrozenLock.setReferenceCounted(false);
 
         mAppTransition = new AppTransition(context, mH);
+        mAppTransition.registerListenerLocked(mActivityManagerAppTransitionNotifier);
 
         mActivityManager = ActivityManagerNative.getDefault();
         mBatteryStats = BatteryStatsService.getService();
@@ -9125,7 +9155,6 @@ public class WindowManagerService extends IWindowManager.Stub
             if (mSkipAppTransitionAnimation) {
                 transit = AppTransition.TRANSIT_UNSET;
             }
-            mAppTransition.goodToGo();
             mStartingIconInTransition = false;
             mSkipAppTransitionAnimation = false;
 
@@ -9420,6 +9449,7 @@ public class WindowManagerService extends IWindowManager.Stub
                 }
             }
 
+            mAppTransition.goodToGo(openingAppAnimator, closingAppAnimator);
             mAppTransition.postAnimationCallback();
             mAppTransition.clear();
 
