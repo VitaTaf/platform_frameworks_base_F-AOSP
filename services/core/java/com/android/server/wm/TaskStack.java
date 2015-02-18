@@ -322,7 +322,7 @@ public class TaskStack {
             for (int appNdx = appWindowTokens.size() - 1; appNdx >= 0; --appNdx) {
                 final WindowList appWindows = appWindowTokens.get(appNdx).allAppWindows;
                 for (int winNdx = appWindows.size() - 1; winNdx >= 0; --winNdx) {
-                    mService.removeWindowInnerLocked(null, appWindows.get(winNdx));
+                    mService.removeWindowInnerLocked(appWindows.get(winNdx));
                     doAnotherLayoutPass = true;
                 }
             }
