@@ -610,6 +610,9 @@ public class SoundPool {
                 int priority, int loop, float rate);
 
         private boolean isRestricted() {
+            if ((mAttributes.getFlags() & AudioAttributes.FLAG_BYPASS_INTERRUPTION_POLICY) != 0) {
+                return false;
+            }
             try {
                 final int mode = mAppOps.checkAudioOperation(AppOpsManager.OP_PLAY_AUDIO,
                         mAttributes.getUsage(),
