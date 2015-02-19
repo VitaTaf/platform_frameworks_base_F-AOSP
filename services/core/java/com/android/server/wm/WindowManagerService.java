@@ -9265,6 +9265,7 @@ public class WindowManagerService extends IWindowManager.Stub
                     for (int j = 0; j < N; j++) {
                         appAnimator.mAllAppWinAnimators.add(wtoken.allAppWindows.get(j).mWinAnimator);
                     }
+                    mAnimator.mAppWindowAnimating |= appAnimator.isAnimating();
                     mAnimator.mAnimating |= appAnimator.showAllWindowsLocked();
                 }
             }
@@ -9293,6 +9294,7 @@ public class WindowManagerService extends IWindowManager.Stub
                     appAnimator.mAllAppWinAnimators.add(wtoken.allAppWindows.get(j).mWinAnimator);
                 }
                 mAnimator.mAnimating |= appAnimator.showAllWindowsLocked();
+                mAnimator.mAppWindowAnimating |= appAnimator.isAnimating();
 
                 if (animLp != null) {
                     int layer = -1;
@@ -9329,6 +9331,7 @@ public class WindowManagerService extends IWindowManager.Stub
                 if (wtoken.startingWindow != null && !wtoken.startingWindow.mExiting) {
                     scheduleRemoveStartingWindowLocked(wtoken);
                 }
+                mAnimator.mAppWindowAnimating |= appAnimator.isAnimating();
 
                 if (animLp != null) {
                     int layer = -1;
@@ -10020,7 +10023,7 @@ public class WindowManagerService extends IWindowManager.Stub
                     defaultDisplay.pendingLayoutChanges);
         }
 
-        if (!mAnimator.mAnimating && mAppTransition.isRunning()) {
+        if (!mAnimator.mAppWindowAnimating && mAppTransition.isRunning()) {
             // We have finished the animation of an app transition.  To do
             // this, we have delayed a lot of operations like showing and
             // hiding apps, moving apps in Z-order, etc.  The app token list
