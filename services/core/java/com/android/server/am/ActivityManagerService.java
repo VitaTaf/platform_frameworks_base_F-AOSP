@@ -7777,7 +7777,7 @@ public final class ActivityManagerService extends ActivityManagerNative
         synchronized (this) {
             enforceCallingPermission(android.Manifest.permission.READ_FRAME_BUFFER,
                     "getTaskThumbnail()");
-            TaskRecord tr = mStackSupervisor.anyTaskForIdLocked(id);
+            TaskRecord tr = mStackSupervisor.anyTaskForIdLocked(id, false);
             if (tr != null) {
                 return tr.getTaskThumbnailLocked();
             }
@@ -7890,7 +7890,7 @@ public final class ActivityManagerService extends ActivityManagerNative
     @Override
     public void setTaskResizeable(int taskId, boolean resizeable) {
         synchronized (this) {
-            TaskRecord task = mStackSupervisor.anyTaskForIdLocked(taskId);
+            TaskRecord task = mStackSupervisor.anyTaskForIdLocked(taskId, false);
             if (task == null) {
                 Slog.w(TAG, "setTaskResizeable: taskId=" + taskId + " not found");
                 return;
@@ -8057,7 +8057,7 @@ public final class ActivityManagerService extends ActivityManagerNative
      * @return Returns true if the given task was found and removed.
      */
     private boolean removeTaskByIdLocked(int taskId, boolean killProcess) {
-        TaskRecord tr = mStackSupervisor.anyTaskForIdLocked(taskId);
+        TaskRecord tr = mStackSupervisor.anyTaskForIdLocked(taskId, false);
         if (tr != null) {
             tr.removeTaskActivitiesLocked();
             cleanUpRemovedTaskLocked(tr, killProcess);
@@ -8340,7 +8340,7 @@ public final class ActivityManagerService extends ActivityManagerNative
         long ident = Binder.clearCallingIdentity();
         try {
             synchronized (this) {
-                TaskRecord tr = mStackSupervisor.anyTaskForIdLocked(taskId);
+                TaskRecord tr = mStackSupervisor.anyTaskForIdLocked(taskId, false);
                 return tr != null && tr.stack != null && tr.stack.isHomeStack();
             }
         } finally {

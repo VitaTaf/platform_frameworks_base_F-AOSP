@@ -469,6 +469,16 @@ public final class ActivityStackSupervisor implements DisplayListener {
     }
 
     TaskRecord anyTaskForIdLocked(int id) {
+        return anyTaskForIdLocked(id, true);
+    }
+
+    /**
+     * Returns a {@link TaskRecord} for the input id if available. Null otherwise.
+     * @param id Id of the task we would like returned.
+     * @param restoreFromRecents If the id was not in the active list, but was found in recents,
+     *                           restore the task from recents to the active list.
+     */
+    TaskRecord anyTaskForIdLocked(int id, boolean restoreFromRecents) {
         int numDisplays = mActivityDisplays.size();
         for (int displayNdx = 0; displayNdx < numDisplays; ++displayNdx) {
             ArrayList<ActivityStack> stacks = mActivityDisplays.valueAt(displayNdx).mStacks;
@@ -487,6 +497,10 @@ public final class ActivityStackSupervisor implements DisplayListener {
         if (task == null) {
             if (DEBUG_RECENTS) Slog.d(TAG, "\tDidn't find task id=" + id + " in recents");
             return null;
+        }
+
+        if (!restoreFromRecents) {
+            return task;
         }
 
         if (!restoreRecentTaskLocked(task)) {
@@ -523,7 +537,7 @@ public final class ActivityStackSupervisor implements DisplayListener {
             if (mCurTaskId <= 0) {
                 mCurTaskId = 1;
             }
-        } while (anyTaskForIdLocked(mCurTaskId) != null);
+        } while (anyTaskForIdLocked(mCurTaskId, false) != null);
         return mCurTaskId;
     }
 
@@ -2714,7 +2728,7 @@ public final class ActivityStackSupervisor implements DisplayListener {
             final ArrayList<ActivityStack> homeDisplayStacks = mHomeStack.mStacks;
             for (int stackNdx = homeDisplayStacks.size() - 1; stackNdx >= 0; --stackNdx) {
                 final ActivityStack tmpStack = homeDisplayStacks.get(stackNdx);
-                if (!tmpStack.isHomeStack()) {
+                if (!tmpStack.isHomeStack() && tmpStack.mFullscreen) {
                     stack = tmpStack;
                     break;
                 }
@@ -3993,6 +4007,10 @@ public final class ActivityStackSupervisor implements DisplayListener {
         }
 
         void onTaskListEmptyLocked() {
+            mHandler.removeMessages(CONTAINER_TASK_LIST_EMPTY_TIMEOUT, this);
+            detachLocked();
+            deleteActivityContainer(this);
+            mHandler.obtainMessage(CONTAINER_CALLBACK_TASK_LIST_EMPTY, this).sendToTarget();
         }
 
         @Override
@@ -4079,13 +4097,6 @@ public final class ActivityStackSupervisor implements DisplayListener {
         @Override
         boolean isEligibleForNewTasks() {
             return false;
-        }
-
-        void onTaskListEmptyLocked() {
-            mHandler.removeMessages(CONTAINER_TASK_LIST_EMPTY_TIMEOUT, this);
-            detachLocked();
-            deleteActivityContainer(this);
-            mHandler.obtainMessage(CONTAINER_CALLBACK_TASK_LIST_EMPTY, this).sendToTarget();
         }
 
         private void setSurfaceIfReadyLocked() {
