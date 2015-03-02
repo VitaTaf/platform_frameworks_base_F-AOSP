@@ -167,14 +167,14 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    public void setColorFilter(ColorFilter cf) {
+    public void setColorFilter(ColorFilter colorFilter) {
         mDrawableContainerState.mHasColorFilter = (cf != null);
 
-        if (mDrawableContainerState.mColorFilter != cf) {
-            mDrawableContainerState.mColorFilter = cf;
+        if (mDrawableContainerState.mColorFilter != colorFilter) {
+            mDrawableContainerState.mColorFilter = colorFilter;
 
             if (mCurrDrawable != null) {
-                mCurrDrawable.mutate().setColorFilter(cf);
+                mCurrDrawable.mutate().setColorFilter(colorFilter);
             }
         }
     }
