@@ -95,6 +95,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.util.MathUtils;
 import android.util.Slog;
+import android.util.SparseIntArray;
 import android.view.KeyEvent;
 import android.view.OrientationEventListener;
 import android.view.Surface;
@@ -118,7 +119,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The implementation of the volume manager service.
@@ -1761,12 +1761,12 @@ public class AudioService extends IAudioService.Stub {
                 if ((isPlatformVoice() || mHasVibrator) &&
                         mStreamVolumeAlias[streamType] == AudioSystem.STREAM_RING) {
                     synchronized (VolumeStreamState.class) {
-                        Set set = mStreamStates[streamType].mIndex.entrySet();
-                        Iterator i = set.iterator();
-                        while (i.hasNext()) {
-                            Map.Entry entry = (Map.Entry)i.next();
-                            if ((Integer)entry.getValue() == 0) {
-                                entry.setValue(10);
+                        SparseIntArray indexMap = mStreamStates[streamType].mIndexMap;
+                        for (int i = 0; i < indexMap.size(); i++) {
+                            int device = indexMap.keyAt(i);
+                            int value = indexMap.valueAt(i);
+                            if (value == 0) {
+                                indexMap.put(device, 10);
                             }
                         }
                     }
@@ -3308,8 +3308,7 @@ public class AudioService extends IAudioService.Stub {
         private boolean mIsMuted;
         private String mVolumeIndexSettingName;
         private int mIndexMax;
-        private final ConcurrentHashMap<Integer, Integer> mIndex =
-                                            new ConcurrentHashMap<Integer, Integer>(8, 0.75f, 4);
+        private final SparseIntArray mIndexMap = new SparseIntArray(8);
 
         private VolumeStreamState(String settingName, int streamType) {
 
@@ -3336,7 +3335,7 @@ public class AudioService extends IAudioService.Stub {
             synchronized (VolumeStreamState.class) {
                 // force maximum volume on all streams if fixed volume property is set
                 if (mUseFixedVolume) {
-                    mIndex.put(AudioSystem.DEVICE_OUT_DEFAULT, mIndexMax);
+                    mIndexMap.put(AudioSystem.DEVICE_OUT_DEFAULT, mIndexMax);
                     return;
                 }
                 // do not read system stream volume from settings: this stream is always aliased
@@ -3350,7 +3349,7 @@ public class AudioService extends IAudioService.Stub {
                             index = mIndexMax;
                         }
                     }
-                    mIndex.put(AudioSystem.DEVICE_OUT_DEFAULT, index);
+                    mIndexMap.put(AudioSystem.DEVICE_OUT_DEFAULT, index);
                     return;
                 }
 
@@ -3375,7 +3374,7 @@ public class AudioService extends IAudioService.Stub {
                         continue;
                     }
 
-                    mIndex.put(device, getValidIndex(10 * index));
+                    mIndexMap.put(device, getValidIndex(10 * index));
                 }
             }
         }
@@ -3406,11 +3405,8 @@ public class AudioService extends IAudioService.Stub {
                 }
                 AudioSystem.setStreamVolumeIndex(mStreamType, index, AudioSystem.DEVICE_OUT_DEFAULT);
                 // then apply device specific volumes
-                Set set = mIndex.entrySet();
-                Iterator i = set.iterator();
-                while (i.hasNext()) {
-                    Map.Entry entry = (Map.Entry)i.next();
-                    int device = ((Integer)entry.getKey()).intValue();
+                for (int i = 0; i < mIndexMap.size(); i++) {
+                    int device = mIndexMap.keyAt(i);
                     if (device != AudioSystem.DEVICE_OUT_DEFAULT) {
                         if (mIsMuted) {
                             index = 0;
@@ -3420,7 +3416,7 @@ public class AudioService extends IAudioService.Stub {
                         {
                             index = (mIndexMax + 5)/10;
                         } else {
-                            index = ((Integer)entry.getValue() + 5)/10;
+                            index = (mIndexMap.valueAt(i) + 5)/10;
                         }
                         AudioSystem.setStreamVolumeIndex(mStreamType, index, device);
                     }
@@ -3442,7 +3438,7 @@ public class AudioService extends IAudioService.Stub {
                         index = mIndexMax;
                     }
                 }
-                mIndex.put(device, index);
+                mIndexMap.put(device, index);
 
                 if (oldIndex != index) {
                     // Apply change to all streams using this one as alias
@@ -3471,12 +3467,12 @@ public class AudioService extends IAudioService.Stub {
 
         public int getIndex(int device) {
             synchronized (VolumeStreamState.class) {
-                Integer index = mIndex.get(device);
-                if (index == null) {
+                int index = mIndexMap.get(device, -1);
+                if (index == -1) {
                     // there is always an entry for AudioSystem.DEVICE_OUT_DEFAULT
-                    index = mIndex.get(AudioSystem.DEVICE_OUT_DEFAULT);
+                    index = mIndexMap.get(AudioSystem.DEVICE_OUT_DEFAULT);
                 }
-                return index.intValue();
+                return index;
             }
         }
 
@@ -3491,19 +3487,14 @@ public class AudioService extends IAudioService.Stub {
                 // some devices are present in this stream state but not in source stream state
                 int index = srcStream.getIndex(AudioSystem.DEVICE_OUT_DEFAULT);
                 index = rescaleIndex(index, srcStreamType, mStreamType);
-                Set set = mIndex.entrySet();
-                Iterator i = set.iterator();
-                while (i.hasNext()) {
-                    Map.Entry entry = (Map.Entry)i.next();
-                    entry.setValue(index);
+                for (int i = 0; i < mIndexMap.size(); i++) {
+                    mIndexMap.put(mIndexMap.keyAt(i), index);
                 }
                 // Now apply actual volume for devices in source stream state
-                set = srcStream.mIndex.entrySet();
-                i = set.iterator();
-                while (i.hasNext()) {
-                    Map.Entry entry = (Map.Entry)i.next();
-                    int device = ((Integer)entry.getKey()).intValue();
-                    index = ((Integer)entry.getValue()).intValue();
+                SparseIntArray srcMap = srcStream.mIndexMap;
+                for (int i = 0; i < srcMap.size(); i++) {
+                    int device = srcMap.keyAt(i);
+                    index = srcMap.valueAt(i);
                     index = rescaleIndex(index, srcStreamType, mStreamType);
 
                     setIndex(index, device);
@@ -3513,11 +3504,8 @@ public class AudioService extends IAudioService.Stub {
 
         public void setAllIndexesToMax() {
             synchronized (VolumeStreamState.class) {
-                Set set = mIndex.entrySet();
-                Iterator i = set.iterator();
-                while (i.hasNext()) {
-                    Map.Entry entry = (Map.Entry)i.next();
-                    entry.setValue(mIndexMax);
+                for (int i = 0; i < mIndexMap.size(); i++) {
+                    mIndexMap.put(mIndexMap.keyAt(i), mIndexMax);
                 }
             }
         }
@@ -3547,15 +3535,12 @@ public class AudioService extends IAudioService.Stub {
             synchronized (VolumeStreamState.class) {
                 // ignore settings for fixed volume devices: volume should always be at max or 0
                 if (mStreamVolumeAlias[mStreamType] == AudioSystem.STREAM_MUSIC) {
-                    Set set = mIndex.entrySet();
-                    Iterator i = set.iterator();
-                    while (i.hasNext()) {
-                        Map.Entry entry = (Map.Entry)i.next();
-                        int device = ((Integer)entry.getKey()).intValue();
-                        int index = ((Integer)entry.getValue()).intValue();
+                    for (int i = 0; i < mIndexMap.size(); i++) {
+                        int device = mIndexMap.keyAt(i);
+                        int index = mIndexMap.valueAt(i);
                         if (((device & mFullVolumeDevices) != 0)
                                 || (((device & mFixedVolumeDevices) != 0) && index != 0)) {
-                            entry.setValue(mIndexMax);
+                            mIndexMap.put(device, mIndexMax);
                         }
                         applyDeviceVolume_syncVSS(device);
                     }
@@ -3579,11 +3564,11 @@ public class AudioService extends IAudioService.Stub {
             pw.print("   Max: ");
             pw.println((mIndexMax + 5) / 10);
             pw.print("   Current: ");
-            Set set = mIndex.entrySet();
-            Iterator i = set.iterator();
-            while (i.hasNext()) {
-                Map.Entry entry = (Map.Entry)i.next();
-                final int device = (Integer) entry.getKey();
+            for (int i = 0; i < mIndexMap.size(); i++) {
+                if (i > 0) {
+                    pw.print(", ");
+                }
+                final int device = mIndexMap.keyAt(i);
                 pw.print(Integer.toHexString(device));
                 final String deviceName = device == AudioSystem.DEVICE_OUT_DEFAULT ? "default"
                         : AudioSystem.getOutputDeviceName(device);
@@ -3593,11 +3578,8 @@ public class AudioService extends IAudioService.Stub {
                     pw.print(")");
                 }
                 pw.print(": ");
-                final int index = (((Integer) entry.getValue()) + 5) / 10;
+                final int index = (mIndexMap.valueAt(i) + 5) / 10;
                 pw.print(index);
-                if (i.hasNext()) {
-                    pw.print(", ");
-                }
             }
         }
     }
