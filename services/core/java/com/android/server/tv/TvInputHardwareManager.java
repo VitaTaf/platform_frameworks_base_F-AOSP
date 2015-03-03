@@ -104,7 +104,6 @@ class TvInputHardwareManager implements TvInputHal.Callback {
     };
     private int mCurrentIndex = 0;
     private int mCurrentMaxIndex = 0;
-    private final boolean mUseMasterVolume;
 
     // TODO: Should handle STANDBY case.
     private final SparseBooleanArray mHdmiStateMap = new SparseBooleanArray();
@@ -119,8 +118,6 @@ class TvInputHardwareManager implements TvInputHal.Callback {
         mContext = context;
         mListener = listener;
         mAudioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-        mUseMasterVolume = mContext.getResources().getBoolean(
-                com.android.internal.R.bool.config_useMasterVolume);
         mHal.init();
     }
 
@@ -141,12 +138,10 @@ class TvInputHardwareManager implements TvInputHal.Callback {
             } else {
                 Slog.w(TAG, "HdmiControlService is not available");
             }
-            if (!mUseMasterVolume) {
-                final IntentFilter filter = new IntentFilter();
-                filter.addAction(AudioManager.VOLUME_CHANGED_ACTION);
-                filter.addAction(AudioManager.STREAM_MUTE_CHANGED_ACTION);
-                mContext.registerReceiver(mVolumeReceiver, filter);
-            }
+            final IntentFilter filter = new IntentFilter();
+            filter.addAction(AudioManager.VOLUME_CHANGED_ACTION);
+            filter.addAction(AudioManager.STREAM_MUTE_CHANGED_ACTION);
+            mContext.registerReceiver(mVolumeReceiver, filter);
             updateVolume();
         }
     }
@@ -547,7 +542,7 @@ class TvInputHardwareManager implements TvInputHal.Callback {
     }
 
     private float getMediaStreamVolume() {
-        return mUseMasterVolume ? 1.0f : ((float) mCurrentIndex / (float) mCurrentMaxIndex);
+        return (float) mCurrentIndex / (float) mCurrentMaxIndex;
     }
 
     private class Connection implements IBinder.DeathRecipient {
