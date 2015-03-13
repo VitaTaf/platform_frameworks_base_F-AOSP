@@ -146,9 +146,6 @@ public class AudioService extends IAudioService.Stub {
     /** Debug volumes */
     protected static final boolean DEBUG_VOL = Log.isLoggable(TAG + ".VOL", Log.DEBUG);
 
-    /** debug calls to media session apis */
-    private static final boolean DEBUG_SESSIONS = Log.isLoggable(TAG + ".SESSIONS", Log.DEBUG);
-
     /** How long to delay before persisting a change in volume/ringer mode. */
     private static final int PERSIST_DELAY = 500;
 
@@ -520,6 +517,7 @@ public class AudioService extends IAudioService.Stub {
 
     private AudioManagerInternal.RingerModeDelegate mRingerModeDelegate;
     private VolumePolicy mVolumePolicy = VolumePolicy.DEFAULT;
+    private long mLoweredFromNormalToVibrateTime;
 
     ///////////////////////////////////////////////////////////////////////////
     // Construction
@@ -2934,6 +2932,7 @@ public class AudioService extends IAudioService.Stub {
                     //   (step <= oldIndex < 2 * step) is equivalent to: (old UI index == 1)
                     if (step <= oldIndex && oldIndex < 2 * step) {
                         ringerMode = RINGER_MODE_VIBRATE;
+                        mLoweredFromNormalToVibrateTime = SystemClock.uptimeMillis();
                     }
                 } else {
                     // (oldIndex < step) is equivalent to (old UI index == 0)
@@ -2966,7 +2965,11 @@ public class AudioService extends IAudioService.Stub {
                     ringerMode = RINGER_MODE_NORMAL;
                 } else if (mPrevVolDirection != AudioManager.ADJUST_LOWER) {
                     if (mVolumePolicy.volumeDownToEnterSilent) {
-                        ringerMode = RINGER_MODE_SILENT;
+                        final long diff = SystemClock.uptimeMillis()
+                                - mLoweredFromNormalToVibrateTime;
+                        if (diff > mVolumePolicy.vibrateToSilentDebounce) {
+                            ringerMode = RINGER_MODE_SILENT;
+                        }
                     } else {
                         result |= AudioManager.FLAG_SHOW_VIBRATE_HINT;
                     }
