@@ -3150,9 +3150,8 @@ public class AudioManager {
             delay = service.setBluetoothA2dpDeviceConnectionState(device, state, profile);
         } catch (RemoteException e) {
             Log.e(TAG, "Dead object in setBluetoothA2dpDeviceConnectionState "+e);
-        } finally {
-            return delay;
         }
+        return delay;
     }
 
     /** {@hide} */
