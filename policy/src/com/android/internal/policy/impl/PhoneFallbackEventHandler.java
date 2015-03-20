@@ -28,9 +28,9 @@ import android.media.session.MediaSessionLegacyHelper;
 import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.os.UserHandle;
-import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.util.Slog;
 import android.view.View;
 import android.view.HapticFeedbackConstants;
 import android.view.FallbackEventHandler;
@@ -117,20 +117,15 @@ public class PhoneFallbackEventHandler implements FallbackEventHandler {
                     dispatcher.startTracking(event, this);
                 } else if (event.isLongPress() && dispatcher.isTracking(event)) {
                     dispatcher.performedLongPress(event);
-                    if (isUserSetupComplete()) {
-                        mView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
-                        // launch the VoiceDialer
-                        Intent intent = new Intent(Intent.ACTION_VOICE_COMMAND);
-                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        try {
-                            sendCloseSystemWindows();
-                            mContext.startActivity(intent);
-                        } catch (ActivityNotFoundException e) {
-                            startCallActivity();
-                        }
-                    } else {
-                        Log.i(TAG, "Not starting call activity because user "
-                                + "setup is in progress.");
+                    mView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                    // launch the VoiceDialer
+                    Intent intent = new Intent(Intent.ACTION_VOICE_COMMAND);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    try {
+                        sendCloseSystemWindows();
+                        mContext.startActivity(intent);
+                    } catch (ActivityNotFoundException e) {
+                        startCallActivity();
                     }
                 }
                 return true;
@@ -144,18 +139,13 @@ public class PhoneFallbackEventHandler implements FallbackEventHandler {
                     dispatcher.startTracking(event, this);
                 } else if (event.isLongPress() && dispatcher.isTracking(event)) {
                     dispatcher.performedLongPress(event);
-                    if (isUserSetupComplete()) {
-                        mView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
-                        sendCloseSystemWindows();
-                        // Broadcast an intent that the Camera button was longpressed
-                        Intent intent = new Intent(Intent.ACTION_CAMERA_BUTTON, null);
-                        intent.putExtra(Intent.EXTRA_KEY_EVENT, event);
-                        mContext.sendOrderedBroadcastAsUser(intent, UserHandle.CURRENT_OR_SELF,
-                                null, null, null, 0, null, null);
-                    } else {
-                        Log.i(TAG, "Not dispatching CAMERA long press because user "
-                                + "setup is in progress.");
-                    }
+                    mView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                    sendCloseSystemWindows();
+                    // Broadcast an intent that the Camera button was longpressed
+                    Intent intent = new Intent(Intent.ACTION_CAMERA_BUTTON, null);
+                    intent.putExtra(Intent.EXTRA_KEY_EVENT, event);
+                    mContext.sendOrderedBroadcastAsUser(intent, UserHandle.CURRENT_OR_SELF,
+                            null, null, null, 0, null, null);
                 }
                 return true;
             }
@@ -170,26 +160,21 @@ public class PhoneFallbackEventHandler implements FallbackEventHandler {
                     Configuration config = mContext.getResources().getConfiguration();
                     if (config.keyboard == Configuration.KEYBOARD_NOKEYS
                             || config.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_YES) {
-                        if (isUserSetupComplete()) {
-                            // launch the search activity
-                            Intent intent = new Intent(Intent.ACTION_SEARCH_LONG_PRESS);
-                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            try {
-                                mView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
-                                sendCloseSystemWindows();
-                                getSearchManager().stopSearch();
-                                mContext.startActivity(intent);
-                                // Only clear this if we successfully start the
-                                // activity; otherwise we will allow the normal short
-                                // press action to be performed.
-                                dispatcher.performedLongPress(event);
-                                return true;
-                            } catch (ActivityNotFoundException e) {
-                                // Ignore
-                            }
-                        } else {
-                            Log.i(TAG, "Not dispatching SEARCH long press because user "
-                                    + "setup is in progress.");
+                        // launch the search activity
+                        Intent intent = new Intent(Intent.ACTION_SEARCH_LONG_PRESS);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        try {
+                            mView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                            sendCloseSystemWindows();
+                            getSearchManager().stopSearch();
+                            mContext.startActivity(intent);
+                            // Only clear this if we successfully start the
+                            // activity; otherwise we will allow the normal short
+                            // press action to be performed.
+                            dispatcher.performedLongPress(event);
+                            return true;
+                        } catch (ActivityNotFoundException e) {
+                            // Ignore
                         }
                     }
                 }
@@ -201,7 +186,7 @@ public class PhoneFallbackEventHandler implements FallbackEventHandler {
 
     boolean onKeyUp(int keyCode, KeyEvent event) {
         if (DEBUG) {
-            Log.d(TAG, "up " + keyCode);
+            Slog.d(TAG, "up " + keyCode);
         }
         final KeyEvent.DispatcherState dispatcher = mView.getKeyDispatcherState();
         if (dispatcher != null) {
@@ -249,12 +234,7 @@ public class PhoneFallbackEventHandler implements FallbackEventHandler {
                     break;
                 }
                 if (event.isTracking() && !event.isCanceled()) {
-                    if (isUserSetupComplete()) {
-                        startCallActivity();
-                    } else {
-                        Log.i(TAG, "Not starting call activity because user "
-                                + "setup is in progress.");
-                    }
+                    startCallActivity();
                 }
                 return true;
             }
@@ -269,7 +249,7 @@ public class PhoneFallbackEventHandler implements FallbackEventHandler {
         try {
             mContext.startActivity(intent);
         } catch (ActivityNotFoundException e) {
-            Log.w(TAG, "No activity found for android.intent.action.CALL_BUTTON.");
+            Slog.w(TAG, "No activity found for android.intent.action.CALL_BUTTON.");
         }
     }
 
@@ -308,11 +288,6 @@ public class PhoneFallbackEventHandler implements FallbackEventHandler {
 
     private void handleMediaKeyEvent(KeyEvent keyEvent) {
         MediaSessionLegacyHelper.getHelper(mContext).sendMediaButtonEvent(keyEvent, false);
-    }
-
-    private boolean isUserSetupComplete() {
-        return Settings.Secure.getInt(mContext.getContentResolver(),
-                Settings.Secure.USER_SETUP_COMPLETE, 0) != 0;
     }
 }
 
