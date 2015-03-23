@@ -125,9 +125,6 @@ public class TaskViewHeader extends FrameLayout {
         mActivityDescription = (TextView) findViewById(R.id.activity_description);
         mDismissButton = (ImageView) findViewById(R.id.dismiss_task);
         mMoveTaskButton = (ImageView) findViewById(R.id.move_task);
-        if (mConfig.multiStackEnabled) {
-            mMoveTaskButton.setVisibility(View.VISIBLE);
-        }
 
         // Hide the backgrounds if they are ripple drawables
         if (!Constants.DebugFlags.App.EnableTaskFiltering) {
@@ -210,6 +207,7 @@ public class TaskViewHeader extends FrameLayout {
                 mLightDismissDrawable : mDarkDismissDrawable);
         mDismissButton.setContentDescription(String.format(mDismissContentDescription,
                 t.activityLabel));
+        mMoveTaskButton.setVisibility((mConfig.multiStackEnabled) ? View.VISIBLE : View.INVISIBLE);
     }
 
     /** Unbinds the bar view from the task */
