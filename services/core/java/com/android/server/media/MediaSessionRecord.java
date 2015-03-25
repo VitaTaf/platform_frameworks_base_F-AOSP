@@ -881,6 +881,14 @@ public class MediaSessionRecord implements IBinder.DeathRecipient {
             }
         }
 
+        public void playFromUri(Uri uri, Bundle extras) {
+            try {
+                mCb.onPlayFromUri(uri, extras);
+            } catch (RemoteException e) {
+                Slog.e(TAG, "Remote failure in playFromUri.", e);
+            }
+        }
+
         public void skipToTrack(long id) {
             try {
                 mCb.onSkipToTrack(id);
@@ -1094,6 +1102,11 @@ public class MediaSessionRecord implements IBinder.DeathRecipient {
         @Override
         public void playFromSearch(String query, Bundle extras) throws RemoteException {
             mSessionCb.playFromSearch(query, extras);
+        }
+
+        @Override
+        public void playFromUri(Uri uri, Bundle extras) throws RemoteException {
+            mSessionCb.playFromUri(uri, extras);
         }
 
         @Override
