@@ -77,6 +77,12 @@ public abstract class NotificationListenerService extends Service {
      */
     public static final int INTERRUPTION_FILTER_NONE = 3;
 
+    /**
+     * {@link #getCurrentInterruptionFilter() Interruption filter} constant -
+     *     Alarms only interruption filter.
+     */
+    public static final int INTERRUPTION_FILTER_ALARMS = 4;
+
     /** {@link #getCurrentListenerHints() Listener hints} constant - the primary device UI
      * should disable notification sound, vibrating and other visual or aural effects.
      * This does not change the interruption filter, only the effects. **/
