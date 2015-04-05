@@ -592,8 +592,8 @@ public class WindowManagerService extends IWindowManager.Stub
     static final long WALLPAPER_TIMEOUT_RECOVERY = 10000;
     boolean mAnimateWallpaperWithTarget;
 
-    // We give a wallpaper up to 1000ms to finish drawing before playing app transitions.
-    static final long WALLPAPER_DRAW_PENDING_TIMEOUT_DURATION = 1000;
+    // We give a wallpaper up to 500ms to finish drawing before playing app transitions.
+    static final long WALLPAPER_DRAW_PENDING_TIMEOUT_DURATION = 500;
     static final int WALLPAPER_DRAW_NORMAL = 0;
     static final int WALLPAPER_DRAW_PENDING = 1;
     static final int WALLPAPER_DRAW_TIMEOUT = 2;
@@ -9079,6 +9079,7 @@ public class WindowManagerService extends IWindowManager.Stub
                     goodToGo = false;
                 }
             }
+
             if (goodToGo && isWallpaperVisible(mWallpaperTarget)) {
                 boolean wallpaperGoodToGo = true;
                 for (int curTokenIndex = mWallpaperTokens.size() - 1;
@@ -11878,3 +11879,4 @@ public class WindowManagerService extends IWindowManager.Stub
         }
     }
 }
+
