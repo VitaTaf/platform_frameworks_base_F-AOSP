@@ -876,7 +876,8 @@ public class NotificationManagerService extends SystemService {
         mRankingHelper = new RankingHelper(getContext(),
                 new RankingWorkerHandler(mRankingThread.getLooper()),
                 extractorNames);
-        mZenModeHelper = new ZenModeHelper(getContext(), mHandler.getLooper());
+        mConditionProviders = new ConditionProviders(getContext(), mHandler, mUserProfiles);
+        mZenModeHelper = new ZenModeHelper(getContext(), mHandler.getLooper(), mConditionProviders);
         mZenModeHelper.addCallback(new ZenModeHelper.Callback() {
             @Override
             public void onConfigChanged() {
@@ -897,8 +898,6 @@ public class NotificationManagerService extends SystemService {
         importOldBlockDb();
 
         mListeners = new NotificationListeners();
-        mConditionProviders = new ConditionProviders(getContext(),
-                mHandler, mUserProfiles, mZenModeHelper);
         mStatusBar = getLocalService(StatusBarManagerInternal.class);
         mStatusBar.setNotificationDelegate(mNotificationDelegate);
 
@@ -933,7 +932,7 @@ public class NotificationManagerService extends SystemService {
                     Settings.Global.DEVICE_PROVISIONED, 0)) {
             mDisableNotificationEffects = true;
         }
-        mZenModeHelper.readZenModeFromSetting();
+        mZenModeHelper.initZenMode();
         mInterruptionFilter = mZenModeHelper.getZenModeListenerInterruptionFilter();
 
         mUserProfiles.updateCache(getContext());
@@ -1472,23 +1471,28 @@ public class NotificationManagerService extends SystemService {
         }
 
         @Override
+        public int getZenMode() {
+            return mZenModeHelper.getZenMode();
+        }
+
+        @Override
         public ZenModeConfig getZenModeConfig() {
             enforceSystemOrSystemUIOrVolume("INotificationManager.getZenModeConfig");
             return mZenModeHelper.getConfig();
         }
 
         @Override
-        public boolean setZenModeConfig(ZenModeConfig config) {
+        public boolean setZenModeConfig(ZenModeConfig config, String reason) {
             checkCallerIsSystem();
-            return mZenModeHelper.setConfig(config);
+            return mZenModeHelper.setConfig(config, reason);
         }
 
         @Override
-        public void setZenMode(int mode) throws RemoteException {
+        public void setZenMode(int mode, Uri conditionId, String reason) throws RemoteException {
             enforceSystemOrSystemUIOrVolume("INotificationManager.setZenMode");
             final long identity = Binder.clearCallingIdentity();
             try {
-                mZenModeHelper.setZenMode(mode, "NotificationManager");
+                mZenModeHelper.setManualZenMode(mode, conditionId, reason);
             } finally {
                 Binder.restoreCallingIdentity(identity);
             }
@@ -1510,30 +1514,7 @@ public class NotificationManagerService extends SystemService {
         @Override
         public void requestZenModeConditions(IConditionListener callback, int relevance) {
             enforceSystemOrSystemUIOrVolume("INotificationManager.requestZenModeConditions");
-            mConditionProviders.requestZenModeConditions(callback, relevance);
-        }
-
-        @Override
-        public void setZenModeCondition(Condition condition) {
-            enforceSystemOrSystemUIOrVolume("INotificationManager.setZenModeCondition");
-            final long identity = Binder.clearCallingIdentity();
-            try {
-                mConditionProviders.setZenModeCondition(condition, "binderCall");
-            } finally {
-                Binder.restoreCallingIdentity(identity);
-            }
-        }
-
-        @Override
-        public void setAutomaticZenModeConditions(Uri[] conditionIds) {
-            enforceSystemOrSystemUI("INotificationManager.setAutomaticZenModeConditions");
-            mConditionProviders.setAutomaticZenModeConditions(conditionIds);
-        }
-
-        @Override
-        public Condition[] getAutomaticZenModeConditions() {
-            enforceSystemOrSystemUI("INotificationManager.getAutomaticZenModeConditions");
-            return mConditionProviders.getAutomaticZenModeConditions();
+            mZenModeHelper.requestZenModeConditions(callback, relevance);
         }
 
         private void enforceSystemOrSystemUIOrVolume(String message) {
@@ -1585,7 +1566,7 @@ public class NotificationManagerService extends SystemService {
         @Override
         public boolean isSystemConditionProviderEnabled(String path) {
             enforceSystemOrSystemUIOrVolume("INotificationManager.isSystemConditionProviderEnabled");
-            return mConditionProviders.isSystemConditionProviderEnabled(path);
+            return mConditionProviders.isSystemProviderEnabled(path);
         }
     };
 

@@ -33,6 +33,7 @@ public class MetricsLogger implements MetricsConstants {
 
     public static final int MANAGE_PERMISSIONS = 142;
     public static final int NOTIFICATION_ZEN_MODE_PRIORITY = 143;
+    public static final int NOTIFICATION_ZEN_MODE_SCHEDULE_RULE = 144;
 
     public static void visible(Context context, int category) throws IllegalArgumentException {
         if (Build.IS_DEBUGGABLE && category == VIEW_UNKNOWN) {
