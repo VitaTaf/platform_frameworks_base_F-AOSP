@@ -129,7 +129,6 @@
 
     <color name="segmented_button_selected">#FFFFFFFF</color>
     <color name="segmented_button_unselected">#B3B0BEC5</color><!-- 70% blue grey 200 -->
-    <color name="volume_panel_divider">#1FFFFFFF</color><!-- 12% white -->
 
     <color name="zen_introduction_message_background">#ff009688</color><!-- deep teal 500 -->
 </resources>
