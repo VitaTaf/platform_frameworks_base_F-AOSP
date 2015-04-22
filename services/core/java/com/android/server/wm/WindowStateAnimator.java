@@ -1178,8 +1178,6 @@ class WindowStateAnimator {
                     mShownAlpha *= appTransformation.getAlpha();
                     if (appTransformation.hasClipRect()) {
                         mClipRect.set(appTransformation.getClipRect());
-                        // Account for non-fullscreen windows
-                        mClipRect.offset(frame.left, frame.top);
                         if (mWin.mHScale > 0) {
                             mClipRect.left /= mWin.mHScale;
                             mClipRect.right /= mWin.mHScale;
@@ -1279,7 +1277,7 @@ class WindowStateAnimator {
         }
     }
 
-    void applyDecorRect(final Rect decorRect) {
+    private void applyDecorRect(final Rect decorRect) {
         final WindowState w = mWin;
         final int width = w.mFrame.width();
         final int height = w.mFrame.height();
