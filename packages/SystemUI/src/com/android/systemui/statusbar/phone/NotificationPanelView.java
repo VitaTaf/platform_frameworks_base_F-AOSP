@@ -1711,29 +1711,6 @@ public class NotificationPanelView extends PanelView implements
     }
 
     @Override
-    protected void onEdgeClicked(boolean right) {
-        if ((right && getRightIcon().getVisibility() != View.VISIBLE)
-                || (!right && getLeftIcon().getVisibility() != View.VISIBLE)
-                || isDozing()) {
-            return;
-        }
-        mHintAnimationRunning = true;
-        mAfforanceHelper.startHintAnimation(right, new Runnable() {
-            @Override
-            public void run() {
-                mHintAnimationRunning = false;
-                mStatusBar.onHintFinished();
-            }
-        });
-        boolean start = getLayoutDirection() == LAYOUT_DIRECTION_RTL ? right : !right;
-        if (start) {
-            mStatusBar.onPhoneHintStarted();
-        } else {
-            mStatusBar.onCameraHintStarted();
-        }
-    }
-
-    @Override
     protected void startUnlockHintAnimation() {
         super.startUnlockHintAnimation();
         startHighlightIconAnimation(getCenterIcon());
@@ -1755,8 +1732,8 @@ public class NotificationPanelView extends PanelView implements
     }
 
     @Override
-    public float getPageWidth() {
-        return getWidth();
+    public float getMaxTranslationDistance() {
+        return (float) Math.hypot(getWidth(), getHeight());
     }
 
     @Override
@@ -1774,6 +1751,27 @@ public class NotificationPanelView extends PanelView implements
     @Override
     public void onSwipingAborted() {
         mKeyguardBottomArea.maybeCooldownCamera();
+    }
+
+    @Override
+    public void onIconClicked(boolean rightIcon) {
+        if (mHintAnimationRunning) {
+            return;
+        }
+        mHintAnimationRunning = true;
+        mAfforanceHelper.startHintAnimation(rightIcon, new Runnable() {
+            @Override
+            public void run() {
+                mHintAnimationRunning = false;
+                mStatusBar.onHintFinished();
+            }
+        });
+        rightIcon = getLayoutDirection() == LAYOUT_DIRECTION_RTL ? !rightIcon : rightIcon;
+        if (rightIcon) {
+            mStatusBar.onCameraHintStarted();
+        } else {
+            mStatusBar.onPhoneHintStarted();
+        }
     }
 
     @Override
