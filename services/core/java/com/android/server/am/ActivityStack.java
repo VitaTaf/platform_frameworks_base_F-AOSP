@@ -1323,6 +1323,9 @@ final class ActivityStack {
                             }
                         } catch(RemoteException e) {
                         }
+                        if (r.state == ActivityState.RESUMED) {
+                            noStackActivityResumed = false;
+                        }
                     } else {
                         // This activity is not currently visible, but is running.
                         // Tell it to become visible.
