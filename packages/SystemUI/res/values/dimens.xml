@@ -551,4 +551,12 @@
     <!-- Screen pinning inner nav bar outer circle size -->
     <dimen name="screen_pinning_nav_highlight_outer_size">84dp</dimen>
 
+    <!-- Vertical spacing between multiple volume slider rows -->
+    <dimen name="volume_slider_interspacing">8dp</dimen>
+
+    <!-- Volume dialog vertical offset from the top of the screen -->
+    <dimen name="volume_offset_top">0dp</dimen>
+
+    <!-- Standard image button size for volume dialog buttons -->
+    <dimen name="volume_button_size">48dp</dimen>
 </resources>

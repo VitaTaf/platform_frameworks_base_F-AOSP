@@ -335,5 +335,9 @@
     <integer name="shutteranimationboost_timeout_param">0</integer>
     <integer name="shutteranimationboost_schedboost_param">0</integer>
     <integer name="shutteranimationboost_cpuboost_param">0</integer>
+
+    <!-- Duration of the expansion animation in the volume dialog -->
+    <item name="volume_expand_animation_duration" type="integer">300</item>
+
 </resources>
 

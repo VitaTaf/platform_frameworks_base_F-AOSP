@@ -128,7 +128,9 @@
     <color name="screen_pinning_request_window_bg">#80000000</color>
 
     <color name="segmented_button_selected">#FFFFFFFF</color>
-    <color name="segmented_button_unselected">#B3B0BEC5</color><!-- 70% blue grey 200 -->
+    <color name="segmented_button_unselected">#FFB0BEC5</color><!-- blue grey 200 -->
 
     <color name="zen_introduction_message_background">#ff009688</color><!-- deep teal 500 -->
+    <color name="volume_icon_color">#ffffffff</color>
+    <color name="volume_settings_icon_color">#7fffffff</color>
 </resources>

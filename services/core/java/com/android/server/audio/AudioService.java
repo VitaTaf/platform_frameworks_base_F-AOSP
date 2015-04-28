@@ -1771,9 +1771,7 @@ public class AudioService extends IAudioService.Stub {
             if (!shouldMute) {
                 // unmute
                 // ring and notifications volume should never be 0 when not silenced
-                // on voice capable devices or devices that support vibration
-                if ((isPlatformVoice() || mHasVibrator) &&
-                        mStreamVolumeAlias[streamType] == AudioSystem.STREAM_RING) {
+                if (mStreamVolumeAlias[streamType] == AudioSystem.STREAM_RING) {
                     synchronized (VolumeStreamState.class) {
                         final VolumeStreamState vss = mStreamStates[streamType];
                         for (int i = 0; i < vss.mIndexMap.size(); i++) {
@@ -2926,10 +2924,7 @@ public class AudioService extends IAudioService.Stub {
                         mLoweredFromNormalToVibrateTime = SystemClock.uptimeMillis();
                     }
                 } else {
-                    // (oldIndex < step) is equivalent to (old UI index == 0)
-                    if ((oldIndex < step)
-                            && mVolumePolicy.volumeDownToEnterSilent
-                            && mPrevVolDirection != AudioManager.ADJUST_LOWER) {
+                    if (oldIndex == step && mVolumePolicy.volumeDownToEnterSilent) {
                         ringerMode = RINGER_MODE_SILENT;
                     }
                 }
@@ -2958,7 +2953,8 @@ public class AudioService extends IAudioService.Stub {
                     if (mVolumePolicy.volumeDownToEnterSilent) {
                         final long diff = SystemClock.uptimeMillis()
                                 - mLoweredFromNormalToVibrateTime;
-                        if (diff > mVolumePolicy.vibrateToSilentDebounce) {
+                        if (diff > mVolumePolicy.vibrateToSilentDebounce
+                                && mRingerModeDelegate.canVolumeDownEnterSilent()) {
                             ringerMode = RINGER_MODE_SILENT;
                         }
                     } else {
