@@ -229,7 +229,7 @@ public class RippleDrawable extends LayerDrawable {
         mExitingRipplesCount = 0;
 
         // Always draw an additional "clean" frame after canceling animations.
-        invalidateSelf();
+        invalidateSelf(false);
     }
 
     @Override
@@ -350,7 +350,7 @@ public class RippleDrawable extends LayerDrawable {
      */
     public void setColor(ColorStateList color) {
         mState.mColor = color;
-        invalidateSelf();
+        invalidateSelf(false);
     }
 
     /**
@@ -362,7 +362,7 @@ public class RippleDrawable extends LayerDrawable {
      */
     public void setRadius(int radius) {
         mState.mMaxRadius = radius;
-        invalidateSelf();
+        invalidateSelf(false);
     }
 
     /**
@@ -463,7 +463,7 @@ public class RippleDrawable extends LayerDrawable {
     private void setTargetDensity(DisplayMetrics metrics) {
         if (mDensity != metrics.density) {
             mDensity = metrics.density;
-            invalidateSelf();
+            invalidateSelf(false);
         }
     }
 
@@ -671,10 +671,17 @@ public class RippleDrawable extends LayerDrawable {
 
     @Override
     public void invalidateSelf() {
+        invalidateSelf(true);
+    }
+
+    void invalidateSelf(boolean invalidateMask) {
         super.invalidateSelf();
 
-        // Force the mask to update on the next draw().
-        mHasValidMask = false;
+        if (invalidateMask) {
+            // Force the mask to update on the next draw().
+            mHasValidMask = false;
+        }
+
     }
 
     private void pruneRipples() {
