@@ -269,7 +269,6 @@ public class TaskViewHeader extends FrameLayout {
                     .setStartDelay(0)
                     .setInterpolator(mConfig.fastOutSlowInInterpolator)
                     .setDuration(mConfig.taskViewExitToAppDuration)
-                    .withLayer()
                     .start();
         }
     }
@@ -284,7 +283,6 @@ public class TaskViewHeader extends FrameLayout {
                     .setStartDelay(0)
                     .setInterpolator(mConfig.fastOutLinearInInterpolator)
                     .setDuration(mConfig.taskViewEnterFromAppDuration)
-                    .withLayer()
                     .start();
         }
     }
