@@ -195,7 +195,6 @@ public class TaskViewHeader extends FrameLayout {
         } else if (t.applicationIcon != null) {
             mApplicationIcon.setImageDrawable(t.applicationIcon);
         }
-        mApplicationIcon.setContentDescription(t.contentDescription);
         if (!mActivityDescription.getText().toString().equals(t.activityLabel)) {
             mActivityDescription.setText(t.activityLabel);
         }
