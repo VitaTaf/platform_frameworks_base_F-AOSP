@@ -1212,7 +1212,7 @@ public class AudioService extends IAudioService.Stub {
 
     private void onSetStreamVolume(int streamType, int index, int flags, int device) {
         final int stream = mStreamVolumeAlias[streamType];
-        setStreamVolumeInt(stream, index, device, false, caller);
+        setStreamVolumeInt(stream, index, device, false);
         // setting volume on ui sounds stream type also controls silent mode
         if (((flags & AudioManager.FLAG_ALLOW_RINGER_MODES) != 0) ||
                 (stream == getUiSoundsStreamType())) {
