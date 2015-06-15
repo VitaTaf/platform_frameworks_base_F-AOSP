@@ -162,6 +162,7 @@ public class VolumeDialog {
         lp.gravity = Gravity.TOP;
         lp.windowAnimations = -1;
         window.setAttributes(lp);
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
 
         mActiveSliderTint = loadColorStateList(R.color.system_accent_color);
         mInactiveSliderTint = loadColorStateList(R.color.volume_slider_inactive);
@@ -744,6 +745,14 @@ public class VolumeDialog {
     }
 
     private void updateVolumeRowSliderTintH(VolumeRow row, boolean isActive) {
+        if (isActive && mExpanded) {
+            row.slider.setFocusable(true);
+            row.slider.setFocusableInTouchMode(true);
+            row.slider.requestFocus();
+        } else {
+            row.slider.setFocusableInTouchMode(false);
+            row.slider.setFocusable(false);
+        }
         final ColorStateList tint = isActive && row.slider.isEnabled() ? mActiveSliderTint
                 : mInactiveSliderTint;
         if (tint == row.cachedSliderTint) return;
