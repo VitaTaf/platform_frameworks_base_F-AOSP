@@ -560,7 +560,7 @@ public abstract class Visibility extends Transition {
                 if (mIsForcedVisibility) {
                     mView.setTransitionAlpha(0);
                 } else {
-                    mView.setTransitionVisibility(mFinalVisibility);
+                    mView.setVisibility(mFinalVisibility);
                 }
             }
         }
