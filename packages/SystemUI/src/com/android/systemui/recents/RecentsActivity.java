@@ -36,6 +36,7 @@ import android.view.View;
 import android.view.ViewStub;
 import android.widget.Toast;
 import com.android.systemui.R;
+import com.android.systemui.recents.misc.Console;
 import com.android.systemui.recents.misc.DebugTrigger;
 import com.android.systemui.recents.misc.ReferenceCountedTrigger;
 import com.android.systemui.recents.misc.SystemServicesProxy;
@@ -106,10 +107,15 @@ public class RecentsActivity extends Activity implements RecentsView.RecentsView
         public void run() {
             // Finish Recents
             if (mLaunchIntent != null) {
-                if (mLaunchOpts != null) {
-                    startActivityAsUser(mLaunchIntent, mLaunchOpts.toBundle(), UserHandle.CURRENT);
-                } else {
-                    startActivityAsUser(mLaunchIntent, UserHandle.CURRENT);
+                try {
+                    if (mLaunchOpts != null) {
+                        startActivityAsUser(mLaunchIntent, mLaunchOpts.toBundle(), UserHandle.CURRENT);
+                    } else {
+                        startActivityAsUser(mLaunchIntent, UserHandle.CURRENT);
+                    }
+                } catch (Exception e) {
+                    Console.logError(RecentsActivity.this,
+                            getString(R.string.recents_launch_error_message, "Home"));
                 }
             } else {
                 finish();
