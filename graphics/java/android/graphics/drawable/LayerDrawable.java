@@ -128,6 +128,7 @@ public class LayerDrawable extends Drawable implements Drawable.Callback {
         mLayerState.mChildren = r;
 
         ensurePadding();
+        refreshPadding();
     }
 
     LayerDrawable() {
@@ -138,6 +139,7 @@ public class LayerDrawable extends Drawable implements Drawable.Callback {
         mLayerState = createConstantState(state, res);
         if (mLayerState.mNum > 0) {
             ensurePadding();
+            refreshPadding();
         }
     }
 
@@ -157,6 +159,7 @@ public class LayerDrawable extends Drawable implements Drawable.Callback {
         inflateLayers(r, parser, attrs, theme);
 
         ensurePadding();
+        refreshPadding();
         onStateChange(getState());
     }
 
@@ -393,6 +396,7 @@ public class LayerDrawable extends Drawable implements Drawable.Callback {
     public int addLayer(Drawable dr) {
         final ChildDrawable layer = createLayer(dr);
         final int index = addLayer(layer);
+        refreshChildPadding(index, layer);
         return index;
     }
 
@@ -532,6 +536,8 @@ public class LayerDrawable extends Drawable implements Drawable.Callback {
 
         childDrawable.mDrawable = drawable;
         mLayerState.invalidateCache();
+
+        refreshChildPadding(index, childDrawable);
     }
 
     /**
@@ -1317,6 +1323,14 @@ public class LayerDrawable extends Drawable implements Drawable.Callback {
         mPaddingT = new int[N];
         mPaddingR = new int[N];
         mPaddingB = new int[N];
+    }
+
+    void refreshPadding() {
+        final int N = mLayerState.mNum;
+        final ChildDrawable[] array = mLayerState.mChildren;
+        for (int i = 0; i < N; i++) {
+            refreshChildPadding(i, array[i]);
+        }
     }
 
     @Override

@@ -198,6 +198,7 @@ public class RippleDrawable extends LayerDrawable {
 
         setColor(color);
         ensurePadding();
+        refreshPadding();
         updateLocalState();
     }
 
@@ -987,6 +988,7 @@ public class RippleDrawable extends LayerDrawable {
 
         if (mState.mNum > 0) {
             ensurePadding();
+            refreshPadding();
         }
 
         if (res != null) {
