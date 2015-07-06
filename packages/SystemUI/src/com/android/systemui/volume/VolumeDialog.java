@@ -156,6 +156,7 @@ public class VolumeDialog {
         lp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
         lp.y = res.getDimensionPixelSize(R.dimen.volume_offset_top);
         lp.gravity = Gravity.TOP;
+        lp.windowAnimations = -1;
         window.setAttributes(lp);
 
         mActiveSliderTint = loadColorStateList(R.color.system_accent_color);
