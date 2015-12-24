@@ -38,7 +38,6 @@ public final class NavigationBarTransitions extends BarTransitions {
     private boolean mLightsOut;
     private boolean mVertical;
     private int mRequestedMode;
-    private boolean mTransparencyAllowedWhenVertical = false;
 
     public NavigationBarTransitions(NavigationBarView view) {
         super(view, R.drawable.nav_background);
@@ -58,18 +57,14 @@ public final class NavigationBarTransitions extends BarTransitions {
         transitionTo(mRequestedMode, false /*animate*/);
     }
 
-    public void setTransparencyAllowedWhenVertical(boolean allowed) {
-        mTransparencyAllowedWhenVertical = allowed;
-    }
-
     @Override
     public void transitionTo(int mode, boolean animate) {
         mRequestedMode = mode;
-        if (mVertical && !mTransparencyAllowedWhenVertical) {
+        if (mVertical) {
             // translucent mode not allowed when vertical
             if (mode == MODE_TRANSLUCENT || mode == MODE_TRANSPARENT) {
                 mode = MODE_OPAQUE;
-            } else if (mode == MODE_LIGHTS_OUT_TRANSPARENT || mode == MODE_LIGHTS_OUT_TRANSLUCENT) {
+            } else if (mode == MODE_LIGHTS_OUT_TRANSPARENT) {
                 mode = MODE_LIGHTS_OUT;
             }
         }
