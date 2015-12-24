@@ -27,7 +27,6 @@ import android.net.Uri;
 import android.os.UserHandle;
 import android.provider.Settings;
 import android.util.AttributeSet;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowInsets;
@@ -40,8 +39,6 @@ import com.android.systemui.recents.model.RecentsPackageMonitor;
 import com.android.systemui.recents.model.RecentsTaskLoader;
 import com.android.systemui.recents.model.Task;
 import com.android.systemui.recents.model.TaskStack;
-
-import com.android.systemui.R;
 
 import java.util.ArrayList;
 
@@ -69,7 +66,6 @@ public class RecentsView extends FrameLayout implements TaskStackView.TaskStackV
     View mSearchBar;
     RecentsViewCallbacks mCb;
     View mClearRecents;
-    View mFloatingButton;
 
     public RecentsView(Context context) {
         super(context);
@@ -161,7 +157,7 @@ public class RecentsView extends FrameLayout implements TaskStackView.TaskStackV
             View child = getChildAt(i);
             if (child != mSearchBar) {
                 TaskStackView stackView = (TaskStackView) child;
-                stackView.dismissAllTasks();
+                //stackView.dismissAllTasks();
             }
         }
     }
@@ -305,13 +301,6 @@ public class RecentsView extends FrameLayout implements TaskStackView.TaskStackV
         mConfig.getTaskStackBounds(width, height, mConfig.systemInsets.top,
                 mConfig.systemInsets.right, taskStackBounds);
 
-        if (mFloatingButton != null) {
-            FrameLayout.LayoutParams params = (FrameLayout.LayoutParams)
-                    mFloatingButton.getLayoutParams();
-            params.gravity = Gravity.BOTTOM | Gravity.RIGHT;
-            mFloatingButton.setLayoutParams(params);
-        }
-
         // Measure each TaskStackView with the full width and height of the window since the 
         // transition view is a child of that stack view
         int childCount = getChildCount();
@@ -332,21 +321,17 @@ public class RecentsView extends FrameLayout implements TaskStackView.TaskStackV
         if (mClearRecents != null) {
             mClearRecents.setVisibility(View.VISIBLE);
         }
-        if (mFloatingButton != null) {
-            mFloatingButton.setVisibility(View.VISIBLE);
-        }
     }
 
     @Override
     protected void onAttachedToWindow () {
         super.onAttachedToWindow();
-        mFloatingButton = ((View)getParent()).findViewById(R.id.floating_action_button);
-        mClearRecents = ((View)getParent()).findViewById(R.id.clear_recents);
-        mClearRecents.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                dismissAllTasksAnimated();
-            }
-        });
+        //mClearRecents = ((View)getParent()).findViewById(R.id.clear_recents);
+        //mClearRecents.setOnClickListener(new View.OnClickListener() {
+        //    public void onClick(View v) {
+        //        dismissAllTasksAnimated();
+        ///    }
+       // });
     }
 
     /**
