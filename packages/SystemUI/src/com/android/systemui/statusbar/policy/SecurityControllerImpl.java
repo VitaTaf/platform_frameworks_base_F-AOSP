@@ -190,8 +190,7 @@ public class SecurityControllerImpl implements SecurityController {
             NetworkCapabilities networkCapabilities =
                     mConnectivityManager.getNetworkCapabilities(network);
             if (DEBUG) Log.d(TAG, "onAvailable " + network.netId + " : " + networkCapabilities);
-            if (networkCapabilities != null &&
-                    networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
+            if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
                 setCurrentNetid(network.netId);
             }
         };
