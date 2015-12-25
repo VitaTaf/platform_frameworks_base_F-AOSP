@@ -1970,8 +1970,7 @@ public interface WindowManager extends ViewManager {
             if (userActivityTimeout >= 0) {
                 sb.append(" userActivityTimeout=").append(userActivityTimeout);
             }
-            if (surfaceInsets.left != 0 || surfaceInsets.top != 0 || surfaceInsets.right != 0 ||
-                    surfaceInsets.bottom != 0) {
+            if (!surfaceInsets.equals(Insets.NONE)) {
                 sb.append(" surfaceInsets=").append(surfaceInsets);
             }
             if (needsMenuKey != NEEDS_MENU_UNSET) {
