@@ -1336,7 +1336,17 @@ public interface WindowManager extends ViewManager {
          * @hide
          */
         public final Rect surfaceInsets = new Rect();
-    
+
+        /**
+         * Whether the surface insets have been manually set. When set to
+         * {@code false}, the view root will automatically determine the
+         * appropriate surface insets.
+         *
+         * @see #surfaceInsets
+         * @hide
+         */
+        public boolean hasManualSurfaceInsets;
+
         /**
          * The desired bitmap format.  May be one of the constants in
          * {@link android.graphics.PixelFormat}.  Default is OPAQUE.
@@ -1632,6 +1642,7 @@ public interface WindowManager extends ViewManager {
             out.writeInt(surfaceInsets.top);
             out.writeInt(surfaceInsets.right);
             out.writeInt(surfaceInsets.bottom);
+            out.writeInt(hasManualSurfaceInsets ? 1 : 0);
             out.writeInt(needsMenuKey);
         }
 
@@ -1680,6 +1691,7 @@ public interface WindowManager extends ViewManager {
             surfaceInsets.top = in.readInt();
             surfaceInsets.right = in.readInt();
             surfaceInsets.bottom = in.readInt();
+            hasManualSurfaceInsets = in.readInt() != 0;
             needsMenuKey = in.readInt();
         }
 
@@ -1862,6 +1874,11 @@ public interface WindowManager extends ViewManager {
                 changes |= SURFACE_INSETS_CHANGED;
             }
 
+            if (hasManualSurfaceInsets != o.hasManualSurfaceInsets) {
+                hasManualSurfaceInsets = o.hasManualSurfaceInsets;
+                changes |= SURFACE_INSETS_CHANGED;
+            }
+
             if (needsMenuKey != o.needsMenuKey) {
                 needsMenuKey = o.needsMenuKey;
                 changes |= NEEDS_MENU_KEY_CHANGED;
@@ -1970,8 +1987,11 @@ public interface WindowManager extends ViewManager {
             if (userActivityTimeout >= 0) {
                 sb.append(" userActivityTimeout=").append(userActivityTimeout);
             }
-            if (!surfaceInsets.equals(Insets.NONE)) {
+            if (!surfaceInsets.equals(Insets.NONE) || hasManualSurfaceInsets) {
                 sb.append(" surfaceInsets=").append(surfaceInsets);
+                if (hasManualSurfaceInsets) {
+                    sb.append(" (manual)");
+                }
             }
             if (needsMenuKey != NEEDS_MENU_UNSET) {
                 sb.append(" needsMenuKey=");
