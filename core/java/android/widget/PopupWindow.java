@@ -84,7 +84,6 @@ public class PopupWindow {
     private final int[] mDrawingLocation = new int[2];
     private final int[] mScreenLocation = new int[2];
     private final Rect mTempRect = new Rect();
-    private final Rect mAnchorBounds = new Rect();
     private Context mContext;
     private WindowManager mWindowManager;
     private boolean mIsShowing;
@@ -132,24 +131,6 @@ public class PopupWindow {
         com.android.internal.R.attr.state_above_anchor
     };
     private WeakReference<View> mAnchor;
-    private final EpicenterCallback mEpicenterCallback = new EpicenterCallback() {
-        @Override
-        public Rect onGetEpicenter(Transition transition) {
-            final View anchor = mAnchor != null ? mAnchor.get() : null;
-            final View decor = mDecorView;
-            if (anchor == null || decor == null) {
-                return null;
-            }
-            final Rect anchorBounds = mAnchorBounds;
-            final int[] anchorLocation = anchor.getLocationOnScreen();
-            final int[] popupLocation = mDecorView.getLocationOnScreen();
-            // Compute the position of the anchor relative to the popup.
-            anchorBounds.set(0, 0, anchor.getWidth(), anchor.getHeight());
-            anchorBounds.offset(anchorLocation[0] - popupLocation[0],
-                    anchorLocation[1] - popupLocation[1]);
-            return anchorBounds;
-        }
-    };
     private final OnScrollChangedListener mOnScrollChangedListener = new OnScrollChangedListener() {
         @Override
         public void onScrollChanged() {
@@ -305,15 +286,9 @@ public class PopupWindow {
     }
     public void setEnterTransition(Transition enterTransition) {
         mEnterTransition = enterTransition;
-        if (mEnterTransition != null) {
-            mEnterTransition.setEpicenterCallback(mEpicenterCallback);
-        }
     }
     public void setExitTransition(Transition exitTransition) {
         mExitTransition = exitTransition;
-        if (mExitTransition != null) {
-            mExitTransition.setEpicenterCallback(mEpicenterCallback);
-        }
     }
     private Transition getTransition(int resId) {
         if (resId != 0 && resId != R.transition.no_transition) {
@@ -1135,9 +1110,11 @@ public class PopupWindow {
         }
         final PopupDecorView decorView = mDecorView;
         decorView.setFitsSystemWindows(mLayoutInsetDecor);
-        decorView.requestEnterTransition(mEnterTransition);
         setLayoutDirectionFromAnchor();
         mWindowManager.addView(decorView, p);
+        if (mEnterTransition != null) {
+            decorView.requestEnterTransition(mEnterTransition);
+        }
     }
     private void setLayoutDirectionFromAnchor() {
         if (mAnchor != null) {
@@ -1422,11 +1399,23 @@ public class PopupWindow {
         }
         // Ensure any ongoing or pending transitions are canceled.
         decorView.cancelTransitions();
-        unregisterForScrollChanged();
         mIsShowing = false;
         mIsTransitioningToDismiss = true;
-        if (mExitTransition != null && decorView.isLaidOut()) {
-            decorView.startExitTransition(mExitTransition, new TransitionListenerAdapter() {
+        final Transition exitTransition = mExitTransition;
+        if (exitTransition != null && decorView.isLaidOut()) {
+            // The decor view is non-interactive during exit transitions.
+            final LayoutParams p = (LayoutParams) decorView.getLayoutParams();
+            p.flags |= LayoutParams.FLAG_NOT_TOUCHABLE;
+            p.flags |= LayoutParams.FLAG_NOT_FOCUSABLE;
+            mWindowManager.updateViewLayout(decorView, p);
+            final Rect epicenter = getRelativeAnchorBounds();
+            exitTransition.setEpicenterCallback(new EpicenterCallback() {
+                @Override
+                public Rect onGetEpicenter(Transition transition) {
+                    return epicenter;
+                }
+            });
+            decorView.startExitTransition(exitTransition, new TransitionListenerAdapter() {
                 @Override
                 public void onTransitionEnd(Transition transition) {
                     dismissImmediate(decorView, contentHolder, contentView);
@@ -1435,9 +1424,24 @@ public class PopupWindow {
         } else {
             dismissImmediate(decorView, contentHolder, contentView);
         }
+        // Clears the anchor view.
+        unregisterForScrollChanged();
         if (mOnDismissListener != null) {
             mOnDismissListener.onDismiss();
         }
+    }
+    private Rect getRelativeAnchorBounds() {
+        final View anchor = mAnchor != null ? mAnchor.get() : null;
+        final View decor = mDecorView;
+        if (anchor == null || decor == null) {
+            return null;
+        }
+        final int[] anchorLocation = anchor.getLocationOnScreen();
+        final int[] popupLocation = mDecorView.getLocationOnScreen();
+        // Compute the position of the anchor relative to the popup.
+        final Rect bounds = new Rect(0, 0, anchor.getWidth(), anchor.getHeight());
+        bounds.offset(anchorLocation[0] - popupLocation[0], anchorLocation[1] - popupLocation[1]);
+        return bounds;
     }
     /**
      * Removes the popup from the window manager and tears down the supporting
@@ -1759,6 +1763,13 @@ public class PopupWindow {
                         if (observer != null) {
                             observer.removeOnGlobalLayoutListener(this);
                         }
+                        final Rect epicenter = getRelativeAnchorBounds();
+                        enterTransition.setEpicenterCallback(new EpicenterCallback() {
+                            @Override
+                            public Rect onGetEpicenter(Transition transition) {
+                                return epicenter;
+                            }
+                        });
                         startEnterTransition(enterTransition);
                     }
                 });
