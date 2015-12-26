@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 The Android Open Source Project
+ * Copyright (C) 2014 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -198,7 +198,7 @@ public class RippleDrawable extends LayerDrawable {
 
         setColor(color);
         ensurePadding();
-        initializeFromState();
+        updateLocalState();
     }
 
     @Override
@@ -352,6 +352,11 @@ public class RippleDrawable extends LayerDrawable {
         return true;
     }
 
+    /**
+     * Sets the ripple color.
+     *
+     * @param color Ripple color as a color state list.
+     */
     public void setColor(ColorStateList color) {
         mState.mColor = color;
         invalidateSelf();
@@ -370,7 +375,8 @@ public class RippleDrawable extends LayerDrawable {
         super.inflate(r, parser, attrs, theme);
 
         setTargetDensity(r.getDisplayMetrics());
-        initializeFromState();
+
+        updateLocalState();
     }
 
     @Override
@@ -450,21 +456,27 @@ public class RippleDrawable extends LayerDrawable {
         super.applyTheme(t);
 
         final RippleState state = mState;
-        if (state == null || state.mTouchThemeAttrs == null) {
+        if (state == null) {
             return;
         }
 
-        final TypedArray a = t.resolveAttributes(state.mTouchThemeAttrs,
-                R.styleable.RippleDrawable);
-        try {
-            updateStateFromTypedArray(a);
-        } catch (XmlPullParserException e) {
-            throw new RuntimeException(e);
-        } finally {
-            a.recycle();
+        if (state.mTouchThemeAttrs != null) {
+            final TypedArray a = t.resolveAttributes(state.mTouchThemeAttrs,
+                    R.styleable.RippleDrawable);
+            try {
+                updateStateFromTypedArray(a);
+            } catch (XmlPullParserException e) {
+                throw new RuntimeException(e);
+            } finally {
+                a.recycle();
+            }
         }
 
-        initializeFromState();
+        if (state.mColor != null && state.mColor.canApplyTheme()) {
+            state.mColor.applyTheme(t);
+        }
+
+        updateLocalState();
     }
 
     @Override
@@ -661,8 +673,7 @@ public class RippleDrawable extends LayerDrawable {
 
         mHasValidMask = true;
 
-        final Rect bounds = getBounds();
-        if (maskType == MASK_NONE || bounds.isEmpty()) {
+        if (maskType == MASK_NONE) {
             if (mMaskBuffer != null) {
                 mMaskBuffer.recycle();
                 mMaskBuffer = null;
@@ -675,6 +686,7 @@ public class RippleDrawable extends LayerDrawable {
         }
 
         // Ensure we have a correctly-sized buffer.
+        final Rect bounds = getBounds();
         if (mMaskBuffer == null
                 || mMaskBuffer.getWidth() != bounds.width()
                 || mMaskBuffer.getHeight() != bounds.height()) {
@@ -931,7 +943,9 @@ public class RippleDrawable extends LayerDrawable {
 
         @Override
         public boolean canApplyTheme() {
-            return mTouchThemeAttrs != null || super.canApplyTheme();
+            return mTouchThemeAttrs != null
+                    || (mColor != null && mColor.canApplyTheme())
+                    || super.canApplyTheme();
         }
 
         @Override
@@ -987,10 +1001,10 @@ public class RippleDrawable extends LayerDrawable {
             mDensity = res.getDisplayMetrics().density;
         }
 
-        initializeFromState();
+        updateLocalState();
     }
 
-    private void initializeFromState() {
+    private void updateLocalState() {
         // Initialize from constant state.
         mMask = findDrawableByLayerId(R.id.mask);
     }
