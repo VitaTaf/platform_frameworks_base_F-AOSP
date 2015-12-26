@@ -252,8 +252,6 @@ public class TaskStack {
             if (group.getTaskCount() == 0) {
                 removeGroup(group);
             }
-            // Update the lock-to-app state
-            t.lockToThisTask = false;
             if (mCb != null) {
                 // Notify that a task has been removed
                 mCb.onStackTaskRemoved(this, t, null);

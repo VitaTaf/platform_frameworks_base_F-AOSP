@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.systemui.recents;
+
 import android.animation.ArgbEvaluator;
 import android.animation.ValueAnimator;
 import android.app.ActivityManager;
@@ -37,13 +39,19 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
 import com.android.systemui.R;
+
 import java.util.ArrayList;
+
 public class ScreenPinningRequest implements View.OnClickListener {
     private final Context mContext;
+
     private final AccessibilityManager mAccessibilityService;
     private final WindowManager mWindowManager;
+
     private RequestWindowView mRequestWindow;
+
     public ScreenPinningRequest(Context context) {
         mContext = context;
         mAccessibilityService = (AccessibilityManager)
@@ -51,25 +59,32 @@ public class ScreenPinningRequest implements View.OnClickListener {
         mWindowManager = (WindowManager)
                 mContext.getSystemService(Context.WINDOW_SERVICE);
     }
+
     public void clearPrompt() {
         if (mRequestWindow != null) {
             mWindowManager.removeView(mRequestWindow);
             mRequestWindow = null;
         }
     }
+
     public void showPrompt(boolean allowCancel) {
         clearPrompt();
+
         mRequestWindow = new RequestWindowView(mContext, allowCancel);
+
         mRequestWindow.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+
         // show the confirmation
         WindowManager.LayoutParams lp = getWindowLayoutParams();
         mWindowManager.addView(mRequestWindow, lp);
     }
+
     public void onConfigurationChanged() {
         if (mRequestWindow != null) {
             mRequestWindow.onConfigurationChanged();
         }
     }
+
     private WindowManager.LayoutParams getWindowLayoutParams() {
         final WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -86,6 +101,7 @@ public class ScreenPinningRequest implements View.OnClickListener {
         lp.gravity = Gravity.FILL;
         return lp;
     }
+
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.screen_pinning_ok_button || mRequestWindow == v) {
@@ -95,6 +111,7 @@ public class ScreenPinningRequest implements View.OnClickListener {
         }
         clearPrompt();
     }
+
     public FrameLayout.LayoutParams getRequestLayoutParams(boolean isLandscape) {
         return new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -102,12 +119,15 @@ public class ScreenPinningRequest implements View.OnClickListener {
                 isLandscape ? (Gravity.CENTER_VERTICAL | Gravity.RIGHT)
                             : (Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM));
     }
+
     private class RequestWindowView extends FrameLayout {
         private static final int OFFSET_DP = 96;
+
         private final ColorDrawable mColor = new ColorDrawable(0);
         private ValueAnimator mColorAnim;
         private ViewGroup mLayout;
         private boolean mShowCancel;
+
         public RequestWindowView(Context context, boolean showCancel) {
             super(context);
             setClickable(true);
@@ -115,12 +135,14 @@ public class ScreenPinningRequest implements View.OnClickListener {
             setBackground(mColor);
             mShowCancel = showCancel;
         }
+
         @Override
         public void onAttachedToWindow() {
             DisplayMetrics metrics = new DisplayMetrics();
             mWindowManager.getDefaultDisplay().getMetrics(metrics);
             float density = metrics.density;
             boolean isLandscape = isLandscapePhone(mContext);
+
             inflateView(isLandscape);
             int bgColor = mContext.getResources().getColor(
                     R.color.screen_pinning_request_window_bg);
@@ -138,6 +160,7 @@ public class ScreenPinningRequest implements View.OnClickListener {
                         .setDuration(300)
                         .setInterpolator(new DecelerateInterpolator())
                         .start();
+
                 mColorAnim = ValueAnimator.ofObject(new ArgbEvaluator(), 0, bgColor);
                 mColorAnim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                     @Override
@@ -151,16 +174,19 @@ public class ScreenPinningRequest implements View.OnClickListener {
             } else {
                 mColor.setColor(bgColor);
             }
+
             IntentFilter filter = new IntentFilter(Intent.ACTION_CONFIGURATION_CHANGED);
             filter.addAction(Intent.ACTION_USER_SWITCHED);
             filter.addAction(Intent.ACTION_SCREEN_OFF);
             mContext.registerReceiver(mReceiver, filter);
         }
+
         private boolean isLandscapePhone(Context context) {
             Configuration config = mContext.getResources().getConfiguration();
             return config.orientation == Configuration.ORIENTATION_LANDSCAPE
                     && config.smallestScreenWidthDp < 600;
         }
+
         private void inflateView(boolean isLandscape) {
             // We only want this landscape orientation on <600dp, so rather than handle
             // resource overlay for -land and -sw600dp-land, just inflate this
@@ -178,6 +204,7 @@ public class ScreenPinningRequest implements View.OnClickListener {
             mLayout.findViewById(R.id.screen_pinning_text_area)
                     .setLayoutDirection(View.LAYOUT_DIRECTION_LOCALE);
             swapChildrenIfRtlAndVertical(buttons);
+
             ((Button) mLayout.findViewById(R.id.screen_pinning_ok_button))
                     .setOnClickListener(ScreenPinningRequest.this);
             if (mShowCancel) {
@@ -187,6 +214,7 @@ public class ScreenPinningRequest implements View.OnClickListener {
                 ((Button) mLayout.findViewById(R.id.screen_pinning_cancel_button))
                         .setVisibility(View.INVISIBLE);
             }
+
             final int description = mAccessibilityService.isEnabled()
                     ? R.string.screen_pinning_description_accessible
                     : R.string.screen_pinning_description;
@@ -196,8 +224,10 @@ public class ScreenPinningRequest implements View.OnClickListener {
                     mAccessibilityService.isEnabled() ? View.INVISIBLE : View.VISIBLE;
             mLayout.findViewById(R.id.screen_pinning_back_bg).setVisibility(backBgVisibility);
             mLayout.findViewById(R.id.screen_pinning_back_bg_light).setVisibility(backBgVisibility);
+
             addView(mLayout, getRequestLayoutParams(isLandscape));
         }
+
         private void swapChildrenIfRtlAndVertical(View group) {
             if (mContext.getResources().getConfiguration().getLayoutDirection()
                     != View.LAYOUT_DIRECTION_RTL) {
@@ -216,14 +246,17 @@ public class ScreenPinningRequest implements View.OnClickListener {
                 }
             }
         }
+
         @Override
         public void onDetachedFromWindow() {
             mContext.unregisterReceiver(mReceiver);
         }
+
         protected void onConfigurationChanged() {
             removeAllViews();
             inflateView(isLandscapePhone(mContext));
         }
+
         private final Runnable mUpdateLayoutRunnable = new Runnable() {
             @Override
             public void run() {
@@ -232,6 +265,7 @@ public class ScreenPinningRequest implements View.OnClickListener {
                 }
             }
         };
+
         private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -244,4 +278,5 @@ public class ScreenPinningRequest implements View.OnClickListener {
             }
         };
     }
+
 }

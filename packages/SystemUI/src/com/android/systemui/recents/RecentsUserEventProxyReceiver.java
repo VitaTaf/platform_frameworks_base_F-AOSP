@@ -13,10 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.systemui.recents;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+
 /**
  * A proxy for Recents events which happens strictly for non-owner users.
  */
@@ -31,6 +34,7 @@ public class RecentsUserEventProxyReceiver extends BroadcastReceiver {
             "com.android.systemui.recents.action.PRELOAD_RECENTS_FOR_USER";
     final public static String ACTION_PROXY_CONFIG_CHANGE_TO_USER =
             "com.android.systemui.recents.action.CONFIG_CHANGED_FOR_USER";
+
     @Override
     public void onReceive(Context context, Intent intent) {
         Recents recents = Recents.getInstanceAndStartIfNeeded(context);
