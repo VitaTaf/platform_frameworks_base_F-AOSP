@@ -273,21 +273,20 @@ class TaskStackViewTouchHandler implements SwipeHelper.Callback {
                 break;
             }
             case MotionEvent.ACTION_UP: {
-                mVelocityTracker.computeCurrentVelocity(1000, mMaximumVelocity);
-                int velocity = (int) mVelocityTracker.getYVelocity(mActivePointerId);
+                final VelocityTracker velocityTracker = mVelocityTracker;
+                velocityTracker.computeCurrentVelocity(1000, mMaximumVelocity);
+                int velocity = (int) velocityTracker.getYVelocity(mActivePointerId);
                 if (mIsScrolling && (Math.abs(velocity) > mMinimumVelocity)) {
-                    float overscrollRangePct = Math.abs((float) velocity / mMaximumVelocity);
-                    int overscrollRange = (int) (Math.min(1f, overscrollRangePct) *
-                            (Constants.Values.TaskStackView.TaskStackMaxOverscrollRange -
-                            Constants.Values.TaskStackView.TaskStackMinOverscrollRange));
-                    mScroller.mScroller.fling(0,
-                            mScroller.progressToScrollRange(mScroller.getStackScroll()),
+                    int overscrollRange = (int) (Math.min(1f,
+                            Math.abs((float) velocity / mMaximumVelocity)) *
+                            Constants.Values.TaskStackView.TaskStackOverscrollRange);
+                    // Fling scroll
+                    mScroller.mScroller.fling(0, mScroller.progressToScrollRange(mScroller.getStackScroll()),
                             0, velocity,
                             0, 0,
                             mScroller.progressToScrollRange(mSv.mLayoutAlgorithm.mMinScrollP),
                             mScroller.progressToScrollRange(mSv.mLayoutAlgorithm.mMaxScrollP),
-                            0, Constants.Values.TaskStackView.TaskStackMinOverscrollRange +
-                                    overscrollRange);
+                            0, overscrollRange);
                     // Invalidate to kick off computeScroll
                     mSv.invalidate();
                 } else if (mScroller.isScrollOutOfBounds()) {

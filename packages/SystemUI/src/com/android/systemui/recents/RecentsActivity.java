@@ -65,6 +65,7 @@ public class RecentsActivity extends Activity implements RecentsView.RecentsView
         DebugOverlayView.DebugOverlayViewCallbacks {
 
     RecentsConfiguration mConfig;
+    boolean mVisible;
     long mLastTabKeyEventTime;
 
     // Top level views
@@ -314,8 +315,7 @@ public class RecentsActivity extends Activity implements RecentsView.RecentsView
 
     /** Dismisses recents if we are already visible and the intent is to toggle the recents view */
     boolean dismissRecentsToFocusedTaskOrHome(boolean checkFilteredStackState) {
-        SystemServicesProxy ssp = RecentsTaskLoader.getInstance().getSystemServicesProxy();
-        if (ssp.isRecentsTopMost(ssp.getTopMostTask(), null)) {
+        if (mVisible) {
             // If we currently have filtered stacks, then unfilter those first
             if (checkFilteredStackState &&
                 mRecentsView.unfilterFilteredStacks()) return true;
@@ -349,8 +349,7 @@ public class RecentsActivity extends Activity implements RecentsView.RecentsView
 
     /** Dismisses Recents directly to Home if we currently aren't transitioning. */
     boolean dismissRecentsToHome(boolean animated) {
-        SystemServicesProxy ssp = RecentsTaskLoader.getInstance().getSystemServicesProxy();
-        if (ssp.isRecentsTopMost(ssp.getTopMostTask(), null)) {
+        if (mVisible) {
             // Return to Home
             dismissRecentsToHomeRaw(animated);
             return true;
@@ -430,6 +429,7 @@ public class RecentsActivity extends Activity implements RecentsView.RecentsView
     @Override
     protected void onStart() {
         super.onStart();
+        mVisible = true;
         RecentsTaskLoader loader = RecentsTaskLoader.getInstance();
         SystemServicesProxy ssp = loader.getSystemServicesProxy();
         AlternateRecentsComponent.notifyVisibilityChanged(this, ssp, true);
@@ -457,6 +457,7 @@ public class RecentsActivity extends Activity implements RecentsView.RecentsView
     @Override
     protected void onStop() {
         super.onStop();
+        mVisible = false;
         RecentsTaskLoader loader = RecentsTaskLoader.getInstance();
         SystemServicesProxy ssp = loader.getSystemServicesProxy();
         AlternateRecentsComponent.notifyVisibilityChanged(this, ssp, false);
