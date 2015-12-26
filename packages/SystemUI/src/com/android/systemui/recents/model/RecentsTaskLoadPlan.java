@@ -20,12 +20,9 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.UserHandle;
 import android.util.Log;
-import android.util.SparseArray;
-import com.android.systemui.recents.Constants;
 import com.android.systemui.recents.RecentsConfiguration;
 import com.android.systemui.recents.misc.SystemServicesProxy;
 
@@ -63,7 +60,7 @@ public class RecentsTaskLoadPlan {
     SystemServicesProxy mSystemServicesProxy;
 
     List<ActivityManager.RecentTaskInfo> mRawTasks;
-    SparseArray<TaskStack> mStacks = new SparseArray<>();
+    TaskStack mStack;
     HashMap<Task.ComponentNameKey, ActivityInfoHandle> mActivityInfoCache =
             new HashMap<Task.ComponentNameKey, ActivityInfoHandle>();
 
@@ -93,28 +90,21 @@ public class RecentsTaskLoadPlan {
     synchronized void preloadPlan(RecentsTaskLoader loader, boolean isTopTaskHome) {
         if (DEBUG) Log.d(TAG, "preloadPlan");
 
-        // This activity info cache will be used for both preloadPlan() and executePlan()
         mActivityInfoCache.clear();
-
-        // TODO (multi-display): Currently assume the primary display
-        Rect displayBounds = mSystemServicesProxy.getWindowRect();
+        mStack = new TaskStack();
 
         Resources res = mContext.getResources();
-        SparseArray<ArrayList<Task>> stacksTasks = new SparseArray<>();
+        ArrayList<Task> loadedTasks = new ArrayList<Task>();
         if (mRawTasks == null) {
             preloadRawTasks(isTopTaskHome);
         }
-        int firstStackId = -1;
         int taskCount = mRawTasks.size();
         for (int i = 0; i < taskCount; i++) {
             ActivityManager.RecentTaskInfo t = mRawTasks.get(i);
-            if (firstStackId < 0) {
-                firstStackId = t.stackId;
-            }
 
             // Compose the task key
-            Task.TaskKey taskKey = new Task.TaskKey(t.persistentId, t.stackId, t.baseIntent,
-                    t.userId, t.firstActiveTime, t.lastActiveTime);
+            Task.TaskKey taskKey = new Task.TaskKey(t.persistentId, t.baseIntent, t.userId,
+                    t.firstActiveTime, t.lastActiveTime);
 
             // Get an existing activity info handle if possible
             Task.ComponentNameKey cnKey = taskKey.getComponentNameKey();
@@ -153,42 +143,14 @@ public class RecentsTaskLoadPlan {
                     iconFilename);
             task.thumbnail = loader.getAndUpdateThumbnail(taskKey, mSystemServicesProxy, false);
             if (DEBUG) Log.d(TAG, "\tthumbnail: " + taskKey + ", " + task.thumbnail);
-
-            if (!mConfig.multiStackEnabled ||
-                    Constants.DebugFlags.App.EnableMultiStackToSingleStack) {
-                ArrayList<Task> stackTasks = stacksTasks.get(firstStackId);
-                if (stackTasks == null) {
-                    stackTasks = new ArrayList<Task>();
-                    stacksTasks.put(firstStackId, stackTasks);
-                }
-                stackTasks.add(task);
-            } else {
-                ArrayList<Task> stackTasks = stacksTasks.get(t.stackId);
-                if (stackTasks == null) {
-                    stackTasks = new ArrayList<Task>();
-                    stacksTasks.put(t.stackId, stackTasks);
-                }
-                stackTasks.add(task);
-            }
+            loadedTasks.add(task);
         }
+        mStack.setTasks(loadedTasks);
+        mStack.createAffiliatedGroupings(mConfig);
 
-        // Initialize the stacks
-        SparseArray<ActivityManager.StackInfo> stackInfos = mSystemServicesProxy.getAllStackInfos();
-        mStacks.clear();
-        int stackCount = stacksTasks.size();
-        for (int i = 0; i < stackCount; i++) {
-            int stackId = stacksTasks.keyAt(i);
-            ActivityManager.StackInfo info = stackInfos.get(stackId);
-            ArrayList<Task> stackTasks = stacksTasks.valueAt(i);
-            TaskStack stack = new TaskStack(stackId);
-            if (Constants.DebugFlags.App.EnableMultiStackToSingleStack) {
-                stack.setBounds(displayBounds, displayBounds);
-            } else {
-                stack.setBounds(info.bounds, displayBounds);
-            }
-            stack.setTasks(stackTasks);
-            stack.createAffiliatedGroupings(mConfig);
-            mStacks.put(stackId, stack);
+        // Assertion
+        if (mStack.getTaskCount() != mRawTasks.size()) {
+            throw new RuntimeException("Loading failed");
         }
     }
 
@@ -204,93 +166,72 @@ public class RecentsTaskLoadPlan {
         Resources res = mContext.getResources();
 
         // Iterate through each of the tasks and load them according to the load conditions.
-        int stackCount = mStacks.size();
-        for (int j = 0; j < stackCount; j++) {
-            ArrayList<Task> tasks = mStacks.valueAt(j).getTasks();
-            int taskCount = tasks.size();
-            for (int i = 0; i < taskCount; i++) {
-                ActivityManager.RecentTaskInfo t = mRawTasks.get(i);
-                Task task = tasks.get(i);
-                Task.TaskKey taskKey = task.key;
+        ArrayList<Task> tasks = mStack.getTasks();
+        int taskCount = tasks.size();
+        for (int i = 0; i < taskCount; i++) {
+            ActivityManager.RecentTaskInfo t = mRawTasks.get(i);
+            Task task = tasks.get(i);
+            Task.TaskKey taskKey = task.key;
 
-                // Get an existing activity info handle if possible
-                Task.ComponentNameKey cnKey = taskKey.getComponentNameKey();
-                ActivityInfoHandle infoHandle;
-                boolean hadCachedActivityInfo = false;
-                if (mActivityInfoCache.containsKey(cnKey)) {
-                    infoHandle = mActivityInfoCache.get(cnKey);
-                    hadCachedActivityInfo = true;
-                } else {
-                    infoHandle = new ActivityInfoHandle();
+            // Get an existing activity info handle if possible
+            Task.ComponentNameKey cnKey = taskKey.getComponentNameKey();
+            ActivityInfoHandle infoHandle;
+            boolean hadCachedActivityInfo = false;
+            if (mActivityInfoCache.containsKey(cnKey)) {
+                infoHandle = mActivityInfoCache.get(cnKey);
+                hadCachedActivityInfo = true;
+            } else {
+                infoHandle = new ActivityInfoHandle();
+            }
+
+            boolean isRunningTask = (task.key.id == opts.runningTaskId);
+            boolean isVisibleTask = i >= (taskCount - opts.numVisibleTasks);
+            boolean isVisibleThumbnail = i >= (taskCount - opts.numVisibleTaskThumbnails);
+
+            // If requested, skip the running task
+            if (opts.onlyLoadPausedActivities && isRunningTask) {
+                continue;
+            }
+
+            if (opts.loadIcons && (isRunningTask || isVisibleTask)) {
+                if (task.activityIcon == null) {
+                    if (DEBUG) Log.d(TAG, "\tLoading icon: " + taskKey);
+                    task.activityIcon = loader.getAndUpdateActivityIcon(taskKey, t.taskDescription,
+                            mSystemServicesProxy, res, infoHandle, true);
                 }
-
-                boolean isRunningTask = (task.key.id == opts.runningTaskId);
-                boolean isVisibleTask = i >= (taskCount - opts.numVisibleTasks);
-                boolean isVisibleThumbnail = i >= (taskCount - opts.numVisibleTaskThumbnails);
-
-                // If requested, skip the running task
-                if (opts.onlyLoadPausedActivities && isRunningTask) {
-                    continue;
-                }
-
-                if (opts.loadIcons && (isRunningTask || isVisibleTask)) {
-                    if (task.activityIcon == null) {
-                        if (DEBUG) Log.d(TAG, "\tLoading icon: " + taskKey);
-                        task.activityIcon = loader.getAndUpdateActivityIcon(taskKey,
-                                t.taskDescription, mSystemServicesProxy, res, infoHandle, true);
+            }
+            if (opts.loadThumbnails && (isRunningTask || isVisibleThumbnail)) {
+                if (task.thumbnail == null || isRunningTask) {
+                    if (DEBUG) Log.d(TAG, "\tLoading thumbnail: " + taskKey);
+                    if (mConfig.svelteLevel <= RecentsConfiguration.SVELTE_LIMIT_CACHE) {
+                        task.thumbnail = loader.getAndUpdateThumbnail(taskKey, mSystemServicesProxy,
+                                true);
+                    } else if (mConfig.svelteLevel == RecentsConfiguration.SVELTE_DISABLE_CACHE) {
+                        loadQueue.addTask(task);
                     }
                 }
-                if (opts.loadThumbnails && (isRunningTask || isVisibleThumbnail)) {
-                    if (task.thumbnail == null || isRunningTask) {
-                        if (DEBUG) Log.d(TAG, "\tLoading thumbnail: " + taskKey);
-                        if (mConfig.svelteLevel <= RecentsConfiguration.SVELTE_LIMIT_CACHE) {
-                            task.thumbnail = loader.getAndUpdateThumbnail(taskKey,
-                                    mSystemServicesProxy, true);
-                        } else if (mConfig.svelteLevel == RecentsConfiguration.SVELTE_DISABLE_CACHE) {
-                            loadQueue.addTask(task);
-                        }
-                    }
-                }
+            }
 
-                // Update the activity info cache
-                if (!hadCachedActivityInfo && infoHandle.info != null) {
-                    mActivityInfoCache.put(cnKey, infoHandle);
-                }
+            // Update the activity info cache
+            if (!hadCachedActivityInfo && infoHandle.info != null) {
+                mActivityInfoCache.put(cnKey, infoHandle);
             }
         }
     }
 
     /**
-     * Returns all TaskStacks from the preloaded list of recent tasks.
+     * Composes and returns a TaskStack from the preloaded list of recent tasks.
      */
-    public ArrayList<TaskStack> getAllTaskStacks() {
-        ArrayList<TaskStack> stacks = new ArrayList<TaskStack>();
-        int stackCount = mStacks.size();
-        for (int i = 0; i < stackCount; i++) {
-            stacks.add(mStacks.valueAt(i));
-        }
-        // Ensure that we have at least one stack
-        if (stacks.isEmpty()) {
-            stacks.add(new TaskStack());
-        }
-        return stacks;
+    public TaskStack getTaskStack() {
+        return mStack;
     }
 
     /**
-     * Returns a specific TaskStack from the preloaded list of recent tasks.
+     * Composes and returns a SpaceNode from the preloaded list of recent tasks.
      */
-    public TaskStack getTaskStack(int stackId) {
-        return mStacks.get(stackId);
-    }
-
-    /** Returns whether there are any tasks in any stacks. */
-    public boolean hasTasks() {
-        int stackCount = mStacks.size();
-        for (int i = 0; i < stackCount; i++) {
-            if (mStacks.valueAt(i).getTaskCount() > 0) {
-                return true;
-            }
-        }
-        return false;
+    public SpaceNode getSpaceNode() {
+        SpaceNode node = new SpaceNode();
+        node.setStack(mStack);
+        return node;
     }
 }

@@ -56,7 +56,6 @@ public class TaskViewHeader extends FrameLayout {
     RecentsConfiguration mConfig;
 
     // Header views
-    ImageView mMoveTaskButton;
     ImageView mDismissButton;
     ImageView mApplicationIcon;
     TextView mActivityDescription;
@@ -127,10 +126,6 @@ public class TaskViewHeader extends FrameLayout {
         mApplicationIcon = (ImageView) findViewById(R.id.application_icon);
         mActivityDescription = (TextView) findViewById(R.id.activity_description);
         mDismissButton = (ImageView) findViewById(R.id.dismiss_task);
-        mMoveTaskButton = (ImageView) findViewById(R.id.move_task);
-        if (mConfig.multiStackEnabled) {
-            mMoveTaskButton.setVisibility(View.VISIBLE);
-        }
 
         // Hide the backgrounds if they are ripple drawables
         if (!Constants.DebugFlags.App.EnableTaskFiltering) {
@@ -193,10 +188,7 @@ public class TaskViewHeader extends FrameLayout {
             mApplicationIcon.setImageDrawable(t.applicationIcon);
         }
         mApplicationIcon.setContentDescription(t.activityLabel);
-        // Always update when multi stack debugging is enabled as the stack id can change
-        if (mConfig.multiStackEnabled) {
-            mActivityDescription.setText("[" + t.key.stackId + "] " + t.activityLabel);
-        } else if (!mActivityDescription.getText().toString().equals(t.activityLabel)) {
+        if (!mActivityDescription.getText().toString().equals(t.activityLabel)) {
             mActivityDescription.setText(t.activityLabel);
         }
         // Try and apply the system ui tint
