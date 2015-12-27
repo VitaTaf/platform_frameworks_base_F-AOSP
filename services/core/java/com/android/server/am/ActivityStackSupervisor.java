@@ -3760,6 +3760,13 @@ public final class ActivityStackSupervisor implements DisplayListener {
         }
 
         @Override
+        public int getStackId() {
+            synchronized (mService) {
+                return mStackId;
+            }
+        }
+
+        @Override
         public boolean injectEvent(InputEvent event) {
             final long origId = Binder.clearCallingIdentity();
             try {
