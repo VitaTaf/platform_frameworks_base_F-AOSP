@@ -437,6 +437,8 @@ public interface IActivityManager extends IInterface {
     public IActivityContainer createVirtualActivityContainer(IBinder parentActivityToken,
             IActivityContainerCallback callback) throws RemoteException;
 
+    public IActivityContainer createStackOnDisplay(int displayId) throws RemoteException;
+
     public void deleteActivityContainer(IActivityContainer container) throws RemoteException;
 
     public int getActivityDisplayId(IBinder activityToken) throws RemoteException;
@@ -793,4 +795,5 @@ public interface IActivityManager extends IInterface {
     int CHECK_PERMISSION_WITH_TOKEN_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+241;
     int REGISTER_TASK_STACK_LISTENER_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION+242;
     int SYSTEM_BACKUP_RESTORED = IBinder.FIRST_CALL_TRANSACTION+243;
+    int CREATE_STACK_ON_DISPLAY = IBinder.FIRST_CALL_TRANSACTION+281;
 }

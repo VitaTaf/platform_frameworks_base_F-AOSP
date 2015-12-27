@@ -8748,6 +8748,20 @@ public final class ActivityManagerService extends ActivityManagerNative
     }
 
     @Override
+    public IActivityContainer createStackOnDisplay(int displayId) throws RemoteException {
+        enforceCallingPermission(android.Manifest.permission.MANAGE_ACTIVITY_STACKS,
+                "createStackOnDisplay()");
+        synchronized (this) {
+            final int stackId = mStackSupervisor.getNextStackId();
+            final ActivityStack stack = mStackSupervisor.createStackOnDisplay(stackId, displayId);
+            if (stack == null) {
+                return null;
+            }
+            return stack.mActivityContainer;
+        }
+    }
+
+    @Override
     public int getActivityDisplayId(IBinder activityToken) throws RemoteException {
         synchronized (this) {
             ActivityStack stack = ActivityRecord.getStackLocked(activityToken);
