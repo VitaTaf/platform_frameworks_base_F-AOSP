@@ -987,21 +987,24 @@ final class ActivityRecord {
     }
 
     private ActivityRecord getWaitingHistoryRecordLocked() {
-        // First find the real culprit...  if this activity is waiting for
-        // another activity to start or has stopped, then the key dispatching
-        // timeout should not be caused by this.
-        if (waitingVisible || stopped) {
+        // First find the real culprit...  if we are waiting
+        // for another app to start, then we have paused dispatching
+        // for this activity.
+        ActivityRecord r = this;
+        if (r.waitingVisible || r.stopped) {
             final ActivityStack stack = mStackSupervisor.getFocusedStack();
-            // Try to use the one which is closest to top.
-            ActivityRecord r = stack.mResumedActivity;
+            // Hmmm, who might we be waiting for?
+            r = stack.mResumedActivity;
             if (r == null) {
                 r = stack.mPausingActivity;
             }
-            if (r != null) {
-                return r;
+            // Both of those null?  Fall back to 'this' again
+            if (r == null) {
+                r = this;
             }
         }
-        return this;
+
+        return r;
     }
 
     public boolean keyDispatchingTimedOut(String reason) {
