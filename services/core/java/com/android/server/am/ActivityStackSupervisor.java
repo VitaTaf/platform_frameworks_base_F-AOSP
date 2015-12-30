@@ -171,6 +171,8 @@ public final class ActivityStackSupervisor implements DisplayListener {
 
     final ActivityManagerService mService;
 
+    private final RecentTasks mRecentTasks;
+
     final ActivityStackSupervisorHandler mHandler;
 
     /** Short cut */
@@ -305,8 +307,9 @@ public final class ActivityStackSupervisor implements DisplayListener {
         }
     }
 
-    public ActivityStackSupervisor(ActivityManagerService service) {
+    public ActivityStackSupervisor(ActivityManagerService service, RecentTasks recentTasks) {
         mService = service;
+        mRecentTasks = recentTasks;
         mHandler = new ActivityStackSupervisorHandler(mService.mHandler.getLooper());
     }
 
@@ -481,7 +484,7 @@ public final class ActivityStackSupervisor implements DisplayListener {
 
         // Don't give up! Look in recents.
         if (DEBUG_RECENTS) Slog.v(TAG, "Looking for task id=" + id + " in recents");
-        TaskRecord task = mService.recentTaskForIdLocked(id);
+        TaskRecord task = mRecentTasks.taskForIdLocked(id);
         if (task == null) {
             if (DEBUG_RECENTS) Slog.d(TAG, "\tDidn't find task id=" + id + " in recents");
             return null;
@@ -2958,7 +2961,7 @@ public final class ActivityStackSupervisor implements DisplayListener {
         r.mLaunchTaskBehind = false;
         final TaskRecord task = r.task;
         task.setLastThumbnail(task.stack.screenshotActivities(r));
-        mService.addRecentTaskLocked(task);
+        mRecentTasks.addLocked(task);
         mService.notifyTaskStackChangedLocked();
         mWindowManager.setAppVisibility(r.appToken, false);
     }
@@ -3721,7 +3724,7 @@ public final class ActivityStackSupervisor implements DisplayListener {
         ActivityContainer(int stackId) {
             synchronized (mService) {
                 mStackId = stackId;
-                mStack = new ActivityStack(this);
+                mStack = new ActivityStack(this, mRecentTasks);
                 mIdString = "ActivtyContainer{" + mStackId + "}";
                 if (DEBUG_STACK) Slog.d(TAG, "Creating " + this);
             }
