@@ -182,8 +182,6 @@ final class InputMonitor implements InputManagerService.WindowManagerCallbacks {
             DisplayContent offScreenDisplayContent =
                 mService.getDigitalPenOffScreenDisplayContentLocked();
 
-            Rect touchableRegion = new Rect();
-
             if ((!DigitalPenOffScreenDisplayAdapter.isDigitalPenDisabled())
                 && (null != offScreenDisplayContent)
                 && (child.getDisplayId() == offScreenDisplayContent.getDisplayId())) {
@@ -191,11 +189,11 @@ final class InputMonitor implements InputManagerService.WindowManagerCallbacks {
                 // display, make the touchable region the entire frame. Using
                 // getStackBounds() will yield the bounds of the activity which
                 // is on the main display - not what we want.
-                touchableRegion = child.getFrameLw();
+                mTmpRect = child.getFrameLw();
             } else {
-                child.getStackBounds(touchableRegion);
+                child.getStackBounds(mTmpRect);
             }
-            inputWindowHandle.touchableRegion.set(touchableRegion);
+            inputWindowHandle.touchableRegion.set(mTmpRect);
         } else {
             // Not modal or full screen modal
             child.getTouchableRegion(inputWindowHandle.touchableRegion);
