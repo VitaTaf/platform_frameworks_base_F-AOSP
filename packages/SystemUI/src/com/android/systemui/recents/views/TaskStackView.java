@@ -644,7 +644,6 @@ public class TaskStackView extends FrameLayout implements TaskStack.TaskStackCal
         }
     }
 
-    @Override
     public CharSequence getAccessibilityClassName() {
         return TaskStackView.class.getName();
     }
