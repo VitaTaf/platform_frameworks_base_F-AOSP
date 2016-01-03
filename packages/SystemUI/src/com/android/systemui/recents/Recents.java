@@ -691,7 +691,9 @@ public class Recents extends SystemUI
             return;
         }
 
-        loader.preloadTasks(sInstanceLoadPlan, isTopTaskHome);
+        if (!sInstanceLoadPlan.hasTasks()) {
+            loader.preloadTasks(sInstanceLoadPlan, isTopTaskHome);
+        }
         ArrayList<TaskStack> stacks = sInstanceLoadPlan.getAllTaskStacks();
         TaskStack stack = stacks.get(0);
 

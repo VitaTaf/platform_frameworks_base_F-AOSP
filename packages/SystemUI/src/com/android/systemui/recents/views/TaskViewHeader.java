@@ -82,6 +82,8 @@ public class TaskViewHeader extends FrameLayout {
     Paint mDimLayerPaint = new Paint();
     PorterDuffColorFilter mDimColorFilter = new PorterDuffColorFilter(0, PorterDuff.Mode.SRC_ATOP);
 
+    boolean mLayersDisabled;
+
     public TaskViewHeader(Context context) {
         this(context, null);
     }
@@ -176,6 +178,8 @@ public class TaskViewHeader extends FrameLayout {
         mDimLayerPaint.setColorFilter(mDimColorFilter);
         setLayerType(LAYER_TYPE_HARDWARE, mDimLayerPaint);
     }
+
+
 
     /** Returns the secondary color for a primary color. */
     int getSecondaryColor(int primaryColor, boolean useLightOverlayColor) {
@@ -305,6 +309,28 @@ public class TaskViewHeader extends FrameLayout {
         // Don't forward our state to the drawable - we do it manually in onTaskViewFocusChanged.
         // This is to prevent layer trashing when the view is pressed.
         return new int[] {};
+    }
+
+    @Override
+    protected void dispatchDraw(Canvas canvas) {
+        super.dispatchDraw(canvas);
+        if (mLayersDisabled) {
+            mLayersDisabled = false;
+            postOnAnimation(new Runnable() {
+                @Override
+                public void run() {
+                    mLayersDisabled = false;
+                    setLayerType(LAYER_TYPE_HARDWARE, mDimLayerPaint);
+                }
+            });
+        }
+    }
+
+    public void disableLayersForOneFrame() {
+        mLayersDisabled = true;
+
+        // Disable layer for a frame so we can draw our first frame faster.
+        setLayerType(LAYER_TYPE_NONE, null);
     }
 
     /** Notifies the associated TaskView has been focused. */
