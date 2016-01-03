@@ -1210,13 +1210,13 @@ public class Gallery extends AbsSpinner implements GestureDetector.OnGestureList
         switch (keyCode) {
             
         case KeyEvent.KEYCODE_DPAD_LEFT:
-            if (!mIsRtl ? movePrevious() : moveNext()) {
+            if (movePrevious()) {
                 playSoundEffect(SoundEffectConstants.NAVIGATION_LEFT);
                 return true;
             }
             break;
         case KeyEvent.KEYCODE_DPAD_RIGHT:
-            if (!mIsRtl ? moveNext() : movePrevious()) {
+            if (moveNext()) {
                 playSoundEffect(SoundEffectConstants.NAVIGATION_RIGHT);
                 return true;
             }

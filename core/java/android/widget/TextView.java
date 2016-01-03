@@ -23,7 +23,6 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.UndoManager;
-import android.content.pm.ApplicationInfo;
 import android.content.res.ColorStateList;
 import android.content.res.CompatibilityInfo;
 import android.content.res.Resources;
@@ -339,9 +338,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
         public Drawables(Context context) {
             final int targetSdkVersion = context.getApplicationInfo().targetSdkVersion;
-            final boolean isSystemApp = (context.getApplicationInfo().flags &
-                ApplicationInfo.FLAG_SYSTEM) != 0;
-            mIsRtlCompatibilityMode = (targetSdkVersion < JELLY_BEAN_MR1 && !isSystemApp ||
+            mIsRtlCompatibilityMode = (targetSdkVersion < JELLY_BEAN_MR1 ||
                 !context.getApplicationInfo().hasRtlSupport());
             mOverride = false;
         }
@@ -6214,10 +6211,10 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             case TEXT_ALIGNMENT_GRAVITY:
                 switch (mGravity & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK) {
                     case Gravity.START:
-                        alignment = !isLayoutRtl() ? Layout.Alignment.ALIGN_NORMAL : Layout.Alignment.ALIGN_RIGHT;
+                        alignment = Layout.Alignment.ALIGN_NORMAL;
                         break;
                     case Gravity.END:
-                        alignment = !isLayoutRtl() ? Layout.Alignment.ALIGN_OPPOSITE : Layout.Alignment.ALIGN_LEFT;
+                        alignment = Layout.Alignment.ALIGN_OPPOSITE;
                         break;
                     case Gravity.LEFT:
                         alignment = Layout.Alignment.ALIGN_LEFT;
@@ -8951,8 +8948,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
     TextDirectionHeuristic getTextDirectionHeuristic() {
         if (hasPasswordTransformationMethod()) {
-            // passwords fields should be ANYRTL_LTR
-            return TextDirectionHeuristics.ANYRTL_LTR;
+            // passwords fields should be LTR
+            return TextDirectionHeuristics.LTR;
         }
 
         // Always need to resolve layout direction first
