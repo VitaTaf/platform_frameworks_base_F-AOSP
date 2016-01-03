@@ -73,9 +73,4 @@ public class FixedSizeImageView extends ImageView {
         mAllowRelayout = true;
         mAllowInvalidate = true;
     }
-
-    @Override
-    public boolean hasOverlappingRendering() {
-        return false;
-    }
 }

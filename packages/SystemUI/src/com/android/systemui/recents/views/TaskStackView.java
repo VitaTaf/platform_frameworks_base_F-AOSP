@@ -19,7 +19,6 @@ package com.android.systemui.recents.views;
 import android.animation.ValueAnimator;
 import android.content.ComponentName;
 import android.content.Context;
-import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.os.Bundle;
@@ -66,6 +65,7 @@ public class TaskStackView extends FrameLayout implements TaskStack.TaskStackCal
 
         public void onTaskResize(Task t);
     }
+
     RecentsConfiguration mConfig;
 
     TaskStack mStack;
@@ -83,6 +83,7 @@ public class TaskStackView extends FrameLayout implements TaskStack.TaskStackCal
     boolean mDismissAllButtonAnimating;
     int mFocusedTaskIndex = -1;
     int mPrevAccessibilityFocusedIndex = -1;
+
     // Optimizations
     int mStackViewsAnimationDuration;
     boolean mStackViewsDirty = true;
@@ -100,7 +101,6 @@ public class TaskStackView extends FrameLayout implements TaskStack.TaskStackCal
     ArrayList<TaskView> mTaskViews = new ArrayList<TaskView>();
     List<TaskView> mImmutableTaskViews = new ArrayList<TaskView>();
     LayoutInflater mInflater;
-    boolean mLayersDisabled;
 
     // A convenience update listener to request updating clipping of tasks
     ValueAnimator.AnimatorUpdateListener mRequestUpdateClippingListener =
@@ -380,9 +380,7 @@ public class TaskStackView extends FrameLayout implements TaskStack.TaskStackCal
 
                 if (tv == null) {
                     tv = mViewPool.pickUpViewFromPool(task, task);
-                    if (mLayersDisabled) {
-                        tv.disableLayersForOneFrame();
-                    }
+
                     if (mStackViewsAnimationDuration > 0) {
                         // For items in the list, put them in start animating them from the
                         // approriate ends of the list where they are expected to appear
@@ -1086,20 +1084,6 @@ public class TaskStackView extends FrameLayout implements TaskStack.TaskStackCal
     void onUserInteraction() {
         // Poke the doze trigger if it is dozing
         mUIDozeTrigger.poke();
-    }
-
-    @Override
-    protected void dispatchDraw(Canvas canvas) {
-        mLayersDisabled = false;
-        super.dispatchDraw(canvas);
-    }
-
-    public void disableLayersForOneFrame() {
-        mLayersDisabled = true;
-        List<TaskView> taskViews = getTaskViews();
-        for (int i = 0; i < taskViews.size(); i++) {
-            taskViews.get(i).disableLayersForOneFrame();
-        }
     }
 
     /**** TaskStackCallbacks Implementation ****/

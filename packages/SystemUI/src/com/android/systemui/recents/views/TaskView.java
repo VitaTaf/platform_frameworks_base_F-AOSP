@@ -367,6 +367,7 @@ public class TaskView extends FrameLayout implements Task.TaskCallbacks,
                 .setStartDelay(delay)
                 .setDuration(duration)
                 .setInterpolator(PhoneStatusBar.ALPHA_IN)
+                .withLayer()
                 .start();
     }
 
@@ -415,6 +416,7 @@ public class TaskView extends FrameLayout implements Task.TaskCallbacks,
                     .setStartDelay(0)
                     .setDuration(mConfig.taskViewExitToAppDuration)
                     .setInterpolator(mConfig.fastOutLinearInInterpolator)
+                    .withLayer()
                     .start();
         } else {
             // Hide the dismiss button
@@ -647,10 +649,6 @@ public class TaskView extends FrameLayout implements Task.TaskCallbacks,
             // Re-notify the header if we were focused and animations were not previously enabled
             mHeaderView.onTaskViewFocusChanged(true, true);
         }
-    }
-
-    public void disableLayersForOneFrame() {
-        mHeaderView.disableLayersForOneFrame();
     }
 
     /**** TaskCallbacks Implementation ****/
