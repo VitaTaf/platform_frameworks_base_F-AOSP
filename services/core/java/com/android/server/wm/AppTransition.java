@@ -298,13 +298,11 @@ public class AppTransition implements Dump {
         return mNextAppTransitionStartY;
     }
 
-    boolean prepare() {
+    void prepare() {
         if (!isRunning()) {
             mAppTransitionState = APP_STATE_IDLE;
             notifyAppTransitionPendingLocked();
-            return true;
         }
-        return false;
     }
 
     void goodToGo(AppWindowAnimator openingAppAnimator, AppWindowAnimator closingAppAnimator) {
@@ -964,8 +962,8 @@ public class AppTransition implements Dump {
                     : com.android.internal.R.anim.voice_activity_open_exit);
             if (DEBUG_APP_TRANSITIONS || DEBUG_ANIM) Slog.v(TAG,
                     "applyAnimation voice:"
-                    + " anim=" + a + " transit=" + appTransitionToString(transit)
-                    + " isEntrance=" + enter + " Callers=" + Debug.getCallers(3));
+                    + " anim=" + a + " transit=" + transit + " isEntrance=" + enter
+                    + " Callers=" + Debug.getCallers(3));
         } else if (isVoiceInteraction && (transit == TRANSIT_ACTIVITY_CLOSE
                 || transit == TRANSIT_TASK_CLOSE
                 || transit == TRANSIT_TASK_TO_BACK)) {
@@ -974,23 +972,22 @@ public class AppTransition implements Dump {
                     : com.android.internal.R.anim.voice_activity_close_exit);
             if (DEBUG_APP_TRANSITIONS || DEBUG_ANIM) Slog.v(TAG,
                     "applyAnimation voice:"
-                    + " anim=" + a + " transit=" + appTransitionToString(transit)
-                    + " isEntrance=" + enter + " Callers=" + Debug.getCallers(3));
+                    + " anim=" + a + " transit=" + transit + " isEntrance=" + enter
+                    + " Callers=" + Debug.getCallers(3));
         } else if (mNextAppTransitionType == NEXT_TRANSIT_TYPE_CUSTOM) {
             a = loadAnimationRes(mNextAppTransitionPackage, enter ?
                     mNextAppTransitionEnter : mNextAppTransitionExit);
             if (DEBUG_APP_TRANSITIONS || DEBUG_ANIM) Slog.v(TAG,
                     "applyAnimation:"
                     + " anim=" + a + " nextAppTransition=ANIM_CUSTOM"
-                    + " transit=" + appTransitionToString(transit) + " isEntrance=" + enter
+                    + " transit=" + transit + " isEntrance=" + enter
                     + " Callers=" + Debug.getCallers(3));
         } else if (mNextAppTransitionType == NEXT_TRANSIT_TYPE_CUSTOM_IN_PLACE) {
             a = loadAnimationRes(mNextAppTransitionPackage, mNextAppTransitionInPlace);
             if (DEBUG_APP_TRANSITIONS || DEBUG_ANIM) Slog.v(TAG,
                     "applyAnimation:"
-                    + " anim=" + a + " nextAppTransition=ANIM_CUSTOM_IN_PLACE"
-                    + " transit=" + appTransitionToString(transit)
-                    + " Callers=" + Debug.getCallers(3));
+                            + " anim=" + a + " nextAppTransition=ANIM_CUSTOM_IN_PLACE"
+                            + " transit=" + transit + " Callers=" + Debug.getCallers(3));
         } else if (mNextAppTransitionType == NEXT_TRANSIT_TYPE_CLIP_REVEAL) {
             a = createClipRevealAnimationLocked(transit, enter, appFrame);
             if (DEBUG_APP_TRANSITIONS || DEBUG_ANIM) Slog.v(TAG,
@@ -1002,7 +999,7 @@ public class AppTransition implements Dump {
             if (DEBUG_APP_TRANSITIONS || DEBUG_ANIM) Slog.v(TAG,
                     "applyAnimation:"
                     + " anim=" + a + " nextAppTransition=ANIM_SCALE_UP"
-                    + " transit=" + appTransitionToString(transit) + " isEntrance=" + enter
+                    + " transit=" + transit + " isEntrance=" + enter
                     + " Callers=" + Debug.getCallers(3));
         } else if (mNextAppTransitionType == NEXT_TRANSIT_TYPE_THUMBNAIL_SCALE_UP ||
                 mNextAppTransitionType == NEXT_TRANSIT_TYPE_THUMBNAIL_SCALE_DOWN) {
@@ -1015,7 +1012,7 @@ public class AppTransition implements Dump {
                         "ANIM_THUMBNAIL_SCALE_UP" : "ANIM_THUMBNAIL_SCALE_DOWN";
                 Slog.v(TAG, "applyAnimation:"
                         + " anim=" + a + " nextAppTransition=" + animName
-                        + " transit=" + appTransitionToString(transit) + " isEntrance=" + enter
+                        + " transit=" + transit + " isEntrance=" + enter
                         + " Callers=" + Debug.getCallers(3));
             }
         } else if (mNextAppTransitionType == NEXT_TRANSIT_TYPE_THUMBNAIL_ASPECT_SCALE_UP ||
@@ -1030,7 +1027,7 @@ public class AppTransition implements Dump {
                         "ANIM_THUMBNAIL_ASPECT_SCALE_UP" : "ANIM_THUMBNAIL_ASPECT_SCALE_DOWN";
                 Slog.v(TAG, "applyAnimation:"
                         + " anim=" + a + " nextAppTransition=" + animName
-                        + " transit=" + appTransitionToString(transit) + " isEntrance=" + enter
+                        + " transit=" + transit + " isEntrance=" + enter
                         + " Callers=" + Debug.getCallers(3));
             }
         } else {
@@ -1096,7 +1093,7 @@ public class AppTransition implements Dump {
                     "applyAnimation:"
                     + " anim=" + a
                     + " animAttr=0x" + Integer.toHexString(animAttr)
-                    + " transit=" + appTransitionToString(transit) + " isEntrance=" + enter
+                    + " transit=" + transit + " isEntrance=" + enter
                     + " Callers=" + Debug.getCallers(3));
         }
         return a;
@@ -1200,7 +1197,7 @@ public class AppTransition implements Dump {
 
     @Override
     public String toString() {
-        return "mNextAppTransition=" + appTransitionToString(mNextAppTransition);
+        return "mNextAppTransition=0x" + Integer.toHexString(mNextAppTransition);
     }
 
     /**

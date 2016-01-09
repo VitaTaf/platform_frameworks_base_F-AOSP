@@ -443,7 +443,7 @@ public class WindowManagerService extends IWindowManager.Stub
     String mLastANRState;
 
     /** All DisplayContents in the world, kept here */
-    SparseArray<DisplayContent> mDisplayContents = new SparseArray<>(2);
+    SparseArray<DisplayContent> mDisplayContents = new SparseArray<DisplayContent>(2);
 
     int mRotation = SystemProperties.getInt("persist.panel.orientation", 0) / 90;
     int mForcedAppOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
@@ -459,7 +459,7 @@ public class WindowManagerService extends IWindowManager.Stub
             deathRecipient = d;
         }
     }
-    ArrayList<RotationWatcher> mRotationWatchers = new ArrayList<>();
+    ArrayList<RotationWatcher> mRotationWatchers = new ArrayList<RotationWatcher>();
     int mDeferredRotationPauseCount;
 
     int mSystemDecorLayer = 0;
@@ -492,10 +492,11 @@ public class WindowManagerService extends IWindowManager.Stub
     private final PowerManager.WakeLock mScreenFrozenLock;
 
     final AppTransition mAppTransition;
+    boolean mStartingIconInTransition = false;
     boolean mSkipAppTransitionAnimation = false;
 
-    final ArraySet<AppWindowToken> mOpeningApps = new ArraySet<>();
-    final ArraySet<AppWindowToken> mClosingApps = new ArraySet<>();
+    final ArraySet<AppWindowToken> mOpeningApps = new ArraySet<AppWindowToken>();
+    final ArraySet<AppWindowToken> mClosingApps = new ArraySet<AppWindowToken>();
 
     boolean mIsTouchDevice;
 
@@ -520,7 +521,7 @@ public class WindowManagerService extends IWindowManager.Stub
     int mInputMethodAnimLayerAdjustment;
 
     WindowState mInputMethodWindow = null;
-    final ArrayList<WindowState> mInputMethodDialogs = new ArrayList<>();
+    final ArrayList<WindowState> mInputMethodDialogs = new ArrayList<WindowState>();
 
     /** Temporary list for comparison. Always clear this after use so we don't end up with
      * orphaned windows references */
@@ -4110,8 +4111,8 @@ public class WindowManagerService extends IWindowManager.Stub
         }
 
         synchronized(mWindowMap) {
-            if (DEBUG_APP_TRANSITIONS) Slog.v(TAG, "Prepare app transition:"
-                    + " transit=" + AppTransition.appTransitionToString(transit)
+            if (DEBUG_APP_TRANSITIONS) Slog.v(
+                    TAG, "Prepare app transition: transit=" + transit
                     + " " + mAppTransition
                     + " alwaysKeepCurrent=" + alwaysKeepCurrent
                     + " Callers=" + Debug.getCallers(3));
@@ -4130,7 +4131,9 @@ public class WindowManagerService extends IWindowManager.Stub
                     mAppTransition.setAppTransition(transit);
                 }
             }
-            if (okToDisplay() && mAppTransition.prepare()) {
+            if (okToDisplay()) {
+                mAppTransition.prepare();
+                mStartingIconInTransition = false;
                 mSkipAppTransitionAnimation = false;
             }
             if (mAppTransition.isTransitionSet()) {
@@ -4257,16 +4260,19 @@ public class WindowManagerService extends IWindowManager.Stub
                 if (ttoken != null) {
                     WindowState startingWindow = ttoken.startingWindow;
                     if (startingWindow != null) {
-                        // In this case, the starting icon has already been displayed, so start
-                        // letting windows get shown immediately without any more transitions.
-                        mSkipAppTransitionAnimation = true;
-
+                        if (mStartingIconInTransition) {
+                            // In this case, the starting icon has already
+                            // been displayed, so start letting windows get
+                            // shown immediately without any more transitions.
+                            mSkipAppTransitionAnimation = true;
+                        }
                         if (DEBUG_STARTING_WINDOW) Slog.v(TAG,
                                 "Moving existing starting " + startingWindow + " from " + ttoken
                                 + " to " + wtoken);
                         final long origId = Binder.clearCallingIdentity();
 
-                        // Transfer the starting window over to the new token.
+                        // Transfer the starting window over to the new
+                        // token.
                         wtoken.startingData = ttoken.startingData;
                         wtoken.startingView = ttoken.startingView;
                         wtoken.startingDisplayed = ttoken.startingDisplayed;
@@ -4280,6 +4286,7 @@ public class WindowManagerService extends IWindowManager.Stub
                         startingWindow.mToken = wtoken;
                         startingWindow.mRootToken = wtoken;
                         startingWindow.mAppToken = wtoken;
+                        startingWindow.mWinAnimator.mAppAnimator = wtoken.mAppAnimator;
 
                         if (DEBUG_WINDOW_MOVEMENT || DEBUG_ADD_REMOVE || DEBUG_STARTING_WINDOW) {
                             Slog.v(TAG, "Removing starting window: " + startingWindow);
@@ -4313,8 +4320,17 @@ public class WindowManagerService extends IWindowManager.Stub
                             wtoken.clientHidden = ttoken.clientHidden;
                             wtoken.sendAppVisibilityToClients();
                         }
-                        ttoken.mAppAnimator.transferCurrentAnimation(
-                                wtoken.mAppAnimator, startingWindow.mWinAnimator);
+                        final AppWindowAnimator tAppAnimator = ttoken.mAppAnimator;
+                        final AppWindowAnimator wAppAnimator = wtoken.mAppAnimator;
+                        if (tAppAnimator.animation != null) {
+                            wAppAnimator.animation = tAppAnimator.animation;
+                            wAppAnimator.animating = tAppAnimator.animating;
+                            wAppAnimator.animLayerAdjustment = tAppAnimator.animLayerAdjustment;
+                            tAppAnimator.animation = null;
+                            tAppAnimator.animLayerAdjustment = 0;
+                            wAppAnimator.updateLayers();
+                            tAppAnimator.updateLayers();
+                        }
 
                         updateFocusedWindowLocked(UPDATE_FOCUS_WILL_PLACE_SURFACES,
                                 true /*updateInputWindows*/);
@@ -4409,6 +4425,7 @@ public class WindowManagerService extends IWindowManager.Stub
             }
 
             if (DEBUG_STARTING_WINDOW) Slog.v(TAG, "Creating StartingData");
+            mStartingIconInTransition = true;
             wtoken.startingData = new StartingData(pkg, theme, compatInfo, nonLocalizedLabel,
                     labelRes, icon, logo, windowFlags);
             Message m = mH.obtainMessage(H.ADD_STARTING, wtoken);
@@ -4509,8 +4526,8 @@ public class WindowManagerService extends IWindowManager.Stub
                 changed = true;
             }
 
-            final int windowsCount = wtoken.allAppWindows.size();
-            for (int i = 0; i < windowsCount; i++) {
+            final int N = wtoken.allAppWindows.size();
+            for (int i=0; i<N; i++) {
                 WindowState win = wtoken.allAppWindows.get(i);
                 if (win == wtoken.startingWindow) {
                     continue;
@@ -4635,7 +4652,7 @@ public class WindowManagerService extends IWindowManager.Stub
             // If we are preparing an app transition, then delay changing
             // the visibility of this token until we execute that transition.
             if (okToDisplay() && mAppTransition.isTransitionSet()) {
-                if (!wtoken.startingDisplayed || mSkipAppTransitionAnimation) {
+                if (!wtoken.startingDisplayed) {
                     if (DEBUG_APP_TRANSITIONS) Slog.v(
                             TAG, "Setting dummy animation on: " + wtoken);
                     wtoken.mAppAnimator.setDummyAnimation();
@@ -9045,14 +9062,14 @@ public class WindowManagerService extends IWindowManager.Stub
     public int handleAppTransitionReadyLocked(WindowList windows) {
         int changes = 0;
         int i;
-        int appsCount = mOpeningApps.size();
+        int NN = mOpeningApps.size();
         boolean goodToGo = true;
         if (DEBUG_APP_TRANSITIONS) Slog.v(TAG,
-                "Checking " + appsCount + " opening apps (frozen="
+                "Checking " + NN + " opening apps (frozen="
                 + mDisplayFrozen + " timeout="
                 + mAppTransition.isTimeout() + ")...");
         if (!mAppTransition.isTimeout()) {
-            for (i = 0; i < appsCount && goodToGo; i++) {
+            for (i=0; i<NN && goodToGo; i++) {
                 AppWindowToken wtoken = mOpeningApps.valueAt(i);
                 if (DEBUG_APP_TRANSITIONS) Slog.v(TAG,
                         "Check opening app=" + wtoken + ": allDrawn="
@@ -9104,6 +9121,7 @@ public class WindowManagerService extends IWindowManager.Stub
             if (mSkipAppTransitionAnimation) {
                 transit = AppTransition.TRANSIT_UNSET;
             }
+            mStartingIconInTransition = false;
             mSkipAppTransitionAnimation = false;
             mNoAnimationNotifyOnTransitionFinished.clear();
 
@@ -9153,17 +9171,17 @@ public class WindowManagerService extends IWindowManager.Stub
             // (2) Find the layout params of the top-most
             // application window in the tokens, which is
             // what will control the animation theme.
-            final int closingAppsCount = mClosingApps.size();
-            appsCount = closingAppsCount + mOpeningApps.size();
-            for (i = 0; i < appsCount; i++) {
+            final int NC = mClosingApps.size();
+            NN = NC + mOpeningApps.size();
+            for (i=0; i<NN; i++) {
                 final AppWindowToken wtoken;
-                if (i < closingAppsCount) {
+                if (i < NC) {
                     wtoken = mClosingApps.valueAt(i);
                     if (wtoken == lowerWallpaperAppToken || wtoken == upperWallpaperAppToken) {
                         closingAppHasWallpaper = true;
                     }
                 } else {
-                    wtoken = mOpeningApps.valueAt(i - closingAppsCount);
+                    wtoken = mOpeningApps.valueAt(i - NC);
                     if (wtoken == lowerWallpaperAppToken || wtoken == upperWallpaperAppToken) {
                         openingAppHasWallpaper = true;
                     }
@@ -9204,23 +9222,20 @@ public class WindowManagerService extends IWindowManager.Stub
                         transit = AppTransition.TRANSIT_WALLPAPER_INTRA_CLOSE;
                         break;
                 }
-                if (DEBUG_APP_TRANSITIONS) Slog.v(TAG,
-                        "New transit: " + AppTransition.appTransitionToString(transit));
+                if (DEBUG_APP_TRANSITIONS) Slog.v(TAG, "New transit: " + transit);
             } else if ((oldWallpaper != null) && !mOpeningApps.isEmpty()
                     && !mOpeningApps.contains(oldWallpaper.mAppToken)) {
                 // We are transitioning from an activity with
                 // a wallpaper to one without.
                 transit = AppTransition.TRANSIT_WALLPAPER_CLOSE;
                 if (DEBUG_APP_TRANSITIONS) Slog.v(TAG,
-                        "New transit away from wallpaper: "
-                        + AppTransition.appTransitionToString(transit));
+                        "New transit away from wallpaper: " + transit);
             } else if (mWallpaperTarget != null && mWallpaperTarget.isVisibleLw()) {
                 // We are transitioning from an activity without
                 // a wallpaper to now showing the wallpaper
                 transit = AppTransition.TRANSIT_WALLPAPER_OPEN;
                 if (DEBUG_APP_TRANSITIONS) Slog.v(TAG,
-                        "New transit into wallpaper: "
-                        + AppTransition.appTransitionToString(transit));
+                        "New transit into wallpaper: " + transit);
             } else {
                 mAnimateWallpaperWithTarget = true;
             }
@@ -9263,16 +9278,13 @@ public class WindowManagerService extends IWindowManager.Stub
                 }
             }
 
-            appsCount = mOpeningApps.size();
-            for (i = 0; i < appsCount; i++) {
+            NN = mOpeningApps.size();
+            for (i=0; i<NN; i++) {
                 AppWindowToken wtoken = mOpeningApps.valueAt(i);
                 final AppWindowAnimator appAnimator = wtoken.mAppAnimator;
                 if (DEBUG_APP_TRANSITIONS) Slog.v(TAG, "Now opening app" + wtoken);
-
-                if (!appAnimator.usingTransferredAnimation) {
-                    appAnimator.clearThumbnail();
-                    appAnimator.animation = null;
-                }
+                appAnimator.clearThumbnail();
+                appAnimator.animation = null;
                 wtoken.inPendingTransaction = false;
                 if (!setTokenVisibilityLocked(
                         wtoken, animLp, true, transit, false, voiceInteraction)){
@@ -9285,15 +9297,15 @@ public class WindowManagerService extends IWindowManager.Stub
                 wtoken.waitingToShow = false;
 
                 appAnimator.mAllAppWinAnimators.clear();
-                final int windowsCount = wtoken.allAppWindows.size();
-                for (int j = 0; j < windowsCount; j++) {
+                final int N = wtoken.allAppWindows.size();
+                for (int j = 0; j < N; j++) {
                     appAnimator.mAllAppWinAnimators.add(wtoken.allAppWindows.get(j).mWinAnimator);
                 }
                 mAnimator.mAnimating |= appAnimator.showAllWindowsLocked();
 
                 if (animLp != null) {
                     int layer = -1;
-                    for (int j = 0; j < wtoken.windows.size(); j++) {
+                    for (int j=0; j<wtoken.windows.size(); j++) {
                         WindowState win = wtoken.windows.get(j);
                         if (win.mWinAnimator.mAnimLayer > layer) {
                             layer = win.mWinAnimator.mAnimLayer;
@@ -9305,8 +9317,8 @@ public class WindowManagerService extends IWindowManager.Stub
                     }
                 }
             }
-            appsCount = mClosingApps.size();
-            for (i = 0; i < appsCount; i++) {
+            NN = mClosingApps.size();
+            for (i=0; i<NN; i++) {
                 AppWindowToken wtoken = mClosingApps.valueAt(i);
                 final AppWindowAnimator appAnimator = wtoken.mAppAnimator;
                 if (DEBUG_APP_TRANSITIONS) Slog.v(TAG, "Now closing app " + wtoken);
@@ -9329,7 +9341,7 @@ public class WindowManagerService extends IWindowManager.Stub
 
                 if (animLp != null) {
                     int layer = -1;
-                    for (int j = 0; j < wtoken.windows.size(); j++) {
+                    for (int j=0; j<wtoken.windows.size(); j++) {
                         WindowState win = wtoken.windows.get(j);
                         if (win.mWinAnimator.mAnimLayer > layer) {
                             layer = win.mWinAnimator.mAnimLayer;
@@ -11309,7 +11321,8 @@ public class WindowManagerService extends IWindowManager.Stub
                     pw.print(" transition="); pw.print(mTransitionAnimationScaleSetting);
                     pw.print(" animator="); pw.println(mAnimatorDurationScaleSetting);
             pw.print("  mTraversalScheduled="); pw.println(mTraversalScheduled);
-            pw.print(" mSkipAppTransitionAnimation="); pw.println(mSkipAppTransitionAnimation);
+            pw.print("  mStartingIconInTransition="); pw.print(mStartingIconInTransition);
+                    pw.print(" mSkipAppTransitionAnimation="); pw.println(mSkipAppTransitionAnimation);
             pw.println("  mLayoutToAnim:");
             mAppTransition.dump(pw);
         }
