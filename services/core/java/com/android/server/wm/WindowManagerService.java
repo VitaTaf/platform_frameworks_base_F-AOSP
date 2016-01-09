@@ -605,7 +605,6 @@ public class WindowManagerService extends IWindowManager.Stub
     final InputManagerService mInputManager;
     final DisplayManagerInternal mDisplayManagerInternal;
     final DisplayManager mDisplayManager;
-    final Display[] mDisplays;
 
     // Who is holding the screen on.
     Session mHoldingScreenOn;
@@ -850,8 +849,8 @@ public class WindowManagerService extends IWindowManager.Stub
 
         mFxSession = new SurfaceSession();
         mDisplayManager = (DisplayManager)context.getSystemService(Context.DISPLAY_SERVICE);
-        mDisplays = mDisplayManager.getDisplays();
-        for (Display display : mDisplays) {
+        Display[] displays = mDisplayManager.getDisplays();
+        for (Display display : displays) {
             createDisplayContentLocked(display);
         }
 
@@ -7541,9 +7540,7 @@ public class WindowManagerService extends IWindowManager.Stub
     }
 
     public void displayReady() {
-        for (Display display : mDisplays) {
-            displayReady(display.getDisplayId());
-        }
+        displayReady(Display.DEFAULT_DISPLAY);
 
         synchronized(mWindowMap) {
             final DisplayContent displayContent = getDefaultDisplayContentLocked();
