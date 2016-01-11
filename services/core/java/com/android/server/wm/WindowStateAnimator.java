@@ -90,7 +90,6 @@ class WindowStateAnimator {
     boolean mWasAnimating;      // Were we animating going into the most recent animation step?
     int mAnimLayer;
     int mLastLayer;
-    boolean mFullyTransparent; //Last value of transparency setting
     long mAnimationStartTime;
     long mLastAnimationTime;
 
@@ -1914,21 +1913,5 @@ class WindowStateAnimator {
         sb.append(mWin.mAttrs.getTitle());
         sb.append('}');
         return sb.toString();
-    }
-
-    void updateFullyTransparent(WindowManager.LayoutParams attrs) {
-        final boolean fullyTransparent = (attrs.privateFlags &
-                WindowManager.LayoutParams.PRIVATE_FLAG_FULLY_TRANSPARENT) != 0;
-        if (fullyTransparent == mFullyTransparent) return;
-        if (mSurfaceControl == null) return;
-        SurfaceControl.openTransaction();
-        try {
-            mSurfaceControl.setTransparent(fullyTransparent);
-        } catch (RuntimeException e) {
-            Slog.w(TAG, "Error toggling transparency. ", e);
-        } finally {
-            SurfaceControl.closeTransaction();
-            mFullyTransparent = fullyTransparent;
-        }
     }
 }

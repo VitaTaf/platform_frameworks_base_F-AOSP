@@ -9618,12 +9618,6 @@ public class WindowManagerService extends IWindowManager.Stub
         }
     }
 
-    private void handlePrivateFlagFullyTransparent(WindowState w) {
-        final WindowManager.LayoutParams attrs = w.mAttrs;
-        final WindowStateAnimator winAnimator = w.mWinAnimator;
-        winAnimator.updateFullyTransparent(attrs);
-    }
-
     private void updateAllDrawnLocked(DisplayContent displayContent) {
         // See if any windows have been drawn, so they (and others
         // associated with them) can now be shown.
@@ -9821,8 +9815,6 @@ public class WindowManagerService extends IWindowManager.Stub
                     if (stack != null && !stack.testDimmingTag()) {
                         handleFlagDimBehind(w);
                     }
-
-                    handlePrivateFlagFullyTransparent(w);
 
                     if (isDefaultDisplay && obscuredChanged && (mWallpaperTarget == w)
                             && w.isVisibleLw()) {
