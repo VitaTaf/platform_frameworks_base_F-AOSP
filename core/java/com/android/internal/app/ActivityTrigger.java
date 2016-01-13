@@ -47,14 +47,13 @@ public class ActivityTrigger
     }
 
     /** &hide */
-    public int activityStartTrigger(Intent intent, int flags) {
+    public void activityStartTrigger(Intent intent) {
         ComponentName cn = intent.getComponent();
         String activity = null;
 
         if (cn != null)
             activity = cn.flattenToString();
-        flags = native_at_startActivity(activity, flags);
-        return flags;
+        native_at_startActivity(activity);
     }
 
     /** &hide */
@@ -67,7 +66,7 @@ public class ActivityTrigger
         native_at_resumeActivity(activity);
     }
 
-    private native int native_at_startActivity(String activity, int flags);
+    private native void native_at_startActivity(String activity);
     private native void native_at_resumeActivity(String activity);
     private native void native_at_deinit();
 }
