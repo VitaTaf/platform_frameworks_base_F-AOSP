@@ -39,35 +39,16 @@
 #include <cutils/properties.h>
 #include <utils/Log.h>
 
-#define LIBRARY_PATH_PREFIX "/vendor/lib/"
+#define LIBRARY_PATH_PREFIX	"/system/lib/"
 
 namespace android
 {
 
 // ----------------------------------------------------------------------------
-/*
- * Stuct containing handle to dynamically loaded lib as well as function
- * pointers to key interfaces.
- */
-typedef struct dlLibHandler {
-    void *dlhandle;
-    void (*startActivity)(const char *, int *);
-    void (*resumeActivity)(const char *);
-    void (*init)(void);
-    void (*deinit)(void);
-    const char *dlname;
-}dlLibHandler;
 
-/*
- * Array of dlhandlers
- * library -both handlers for Start and Resume events.
- */
-static dlLibHandler mDlLibHandlers[] = {
-    {NULL, NULL, NULL, NULL, NULL,
-     "ro.vendor.at_library"},
-    {NULL, NULL, NULL, NULL, NULL,
-     "ro.vendor.gt_library"},
-};
+static void (*startActivity)(const char *, int *)  = NULL;
+static void (*resumeActivity)(const char *) = NULL;
+static void *dlhandle                       = NULL;
 
 // ----------------------------------------------------------------------------
 
@@ -78,81 +59,65 @@ com_android_internal_app_ActivityTrigger_native_at_init()
     void (*init)(void);
     char buf[PROPERTY_VALUE_MAX];
     int len;
-    bool errored = false;
-    size_t numlibs = 0;
 
-    numlibs = sizeof (mDlLibHandlers) / sizeof (*mDlLibHandlers);
+    /* Retrieve name of vendor library */
+    if (property_get("ro.vendor.gt_library", buf, NULL) <= 0) {
+        return;
+    }
 
-    for(size_t i = 0; i < numlibs; i++) {
-        errored = false;
+    /* Sanity check - ensure */
+    buf[PROPERTY_VALUE_MAX-1] = '\0';
+    if (strstr(buf, "/") != NULL) {
+        return;
+    }
 
-        /* Retrieve name of vendor library */
-        if (property_get(mDlLibHandlers[i].dlname, buf, NULL) <= 0) {
-            continue;
-        }
+    dlhandle = dlopen(buf, RTLD_NOW | RTLD_LOCAL);
+    if (dlhandle == NULL) {
+        return;
+    }
 
-        /* Sanity check - ensure */
-        buf[PROPERTY_VALUE_MAX-1] = '\0';
-        if (strstr(buf, "/") != NULL) {
-            continue;
-        }
+    dlerror();
 
-        mDlLibHandlers[i].dlhandle = dlopen(buf, RTLD_NOW | RTLD_LOCAL);
-        if (mDlLibHandlers[i].dlhandle == NULL) {
-            continue;
-        }
+    *(void **) (&startActivity) = dlsym(dlhandle, "activity_trigger_start");
+    if ((rc = dlerror()) != NULL) {
+        goto cleanup;
+    }
+    *(void **) (&resumeActivity) = dlsym(dlhandle, "activity_trigger_resume");
+    if ((rc = dlerror()) != NULL) {
+        goto cleanup;
+    }
+    *(void **) (&init) = dlsym(dlhandle, "activity_trigger_init");
+    if ((rc = dlerror()) != NULL) {
+        goto cleanup;
+    }
+    (*init)();
+    return;
 
-        dlerror();
-
-        *(void **) (&mDlLibHandlers[i].startActivity) = dlsym(mDlLibHandlers[i].dlhandle, "activity_trigger_start");
-        if ((rc = dlerror()) != NULL) {
-            errored = true;
-        }
-
-        if (!errored) {
-            *(void **) (&mDlLibHandlers[i].resumeActivity) = dlsym(mDlLibHandlers[i].dlhandle, "activity_trigger_resume");
-            if ((rc = dlerror()) != NULL) {
-                errored = true;
-            }
-        }
-        if (!errored) {
-            *(void **) (&mDlLibHandlers[i].init) = dlsym(mDlLibHandlers[i].dlhandle, "activity_trigger_init");
-            if ((rc = dlerror()) != NULL) {
-                errored = true;
-            }
-        }
-
-        if (errored) {
-            mDlLibHandlers[i].startActivity  = NULL;
-            mDlLibHandlers[i].resumeActivity = NULL;
-            if (mDlLibHandlers[i].dlhandle) {
-                dlclose(mDlLibHandlers[i].dlhandle);
-                mDlLibHandlers[i].dlhandle = NULL;
-            }
-        } else {
-            (*mDlLibHandlers[i].init)();
-        }
+cleanup:
+    startActivity  = NULL;
+    resumeActivity = NULL;
+    if (dlhandle) {
+        dlclose(dlhandle);
+        dlhandle = NULL;
     }
 }
 
 static void
 com_android_internal_app_ActivityTrigger_native_at_deinit(JNIEnv *env, jobject clazz)
 {
-    size_t numlibs = sizeof (mDlLibHandlers) / sizeof (*mDlLibHandlers);
+    void (*deinit)(void);
 
-    for(size_t i = 0; i < numlibs; i++) {
-        if (mDlLibHandlers[i].dlhandle) {
-            mDlLibHandlers[i].startActivity  = NULL;
-            mDlLibHandlers[i].resumeActivity = NULL;
+    if (dlhandle) {
+        startActivity  = NULL;
+        resumeActivity = NULL;
 
-            *(void **) (&mDlLibHandlers[i].deinit) = dlsym(mDlLibHandlers[i].dlhandle, "activity_trigger_deinit");
-            if (mDlLibHandlers[i].deinit) {
-                (*mDlLibHandlers[i].deinit)();
-            }
-
-            dlclose(mDlLibHandlers[i].dlhandle);
-            mDlLibHandlers[i].dlhandle = NULL;
+        *(void **) (&deinit) = dlsym(dlhandle, "activity_trigger_deinit");
+        if (deinit) {
+            (*deinit)();
         }
+
+        dlclose(dlhandle);
+        dlhandle       = NULL;
     }
 }
 
@@ -160,13 +125,10 @@ static jint
 com_android_internal_app_ActivityTrigger_native_at_startActivity(JNIEnv *env, jobject clazz, jstring activity, jint flags)
 {
     int activiyFlags = flags;
-    size_t numlibs = sizeof (mDlLibHandlers) / sizeof (*mDlLibHandlers);
-    for(size_t i = 0; i < numlibs; i++){
-        if(mDlLibHandlers[i].startActivity && activity) {
-            const char *actStr = env->GetStringUTFChars(activity, NULL);
-            if (actStr) {
-                (*mDlLibHandlers[i].startActivity)(actStr, &activiyFlags);
-            }
+    if (startActivity && activity) {
+        const char *actStr = env->GetStringUTFChars(activity, NULL);
+        if (actStr) {
+            (*startActivity)(actStr, &activiyFlags);
         }
     }
     return activiyFlags;
@@ -175,14 +137,10 @@ com_android_internal_app_ActivityTrigger_native_at_startActivity(JNIEnv *env, jo
 static void
 com_android_internal_app_ActivityTrigger_native_at_resumeActivity(JNIEnv *env, jobject clazz, jstring activity)
 {
-    size_t numlibs = sizeof (mDlLibHandlers) / sizeof (*mDlLibHandlers);
-
-    for(size_t i = 0; i < numlibs; i++){
-        if(mDlLibHandlers[i].resumeActivity && activity) {
-            const char *actStr = env->GetStringUTFChars(activity, NULL);
-            if (actStr) {
-                (*mDlLibHandlers[i].resumeActivity)(actStr);
-            }
+    if (resumeActivity && activity) {
+        const char *actStr = env->GetStringUTFChars(activity, NULL);
+        if (actStr) {
+            (*resumeActivity)(actStr);
         }
     }
 }
