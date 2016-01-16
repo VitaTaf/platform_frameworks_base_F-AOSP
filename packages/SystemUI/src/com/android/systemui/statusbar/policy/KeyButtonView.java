@@ -24,7 +24,6 @@ import android.content.res.TypedArray;
 import android.hardware.input.InputManager;
 import android.media.AudioManager;
 import android.os.Bundle;
-import android.os.PowerManager;
 import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -60,8 +59,6 @@ public class KeyButtonView extends ImageView {
     private boolean mSupportsLongpress = true;
     private AudioManager mAudioManager;
     private Animator mAnimateToQuiescent = new ObjectAnimator();
-
-    private PowerManager mPm;
 
     private final Runnable mCheckLongPress = new Runnable() {
         public void run() {
@@ -101,7 +98,6 @@ public class KeyButtonView extends ImageView {
         mTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         mAudioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         setBackground(new KeyButtonRipple(context, this));
-        mPm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
     }
 
     @Override
@@ -175,9 +171,6 @@ public class KeyButtonView extends ImageView {
     public boolean onTouchEvent(MotionEvent ev) {
         final int action = ev.getAction();
         int x, y;
-
-        // A lot of stuff is about to happen. Lets get ready.
-        mPm.cpuBoost(750000);
 
         switch (action) {
             case MotionEvent.ACTION_DOWN:
