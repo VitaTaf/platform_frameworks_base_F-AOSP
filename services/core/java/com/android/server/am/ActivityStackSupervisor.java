@@ -146,12 +146,7 @@ public final class ActivityStackSupervisor implements DisplayListener {
     static final int SLEEP_TIMEOUT_MSG = FIRST_SUPERVISOR_STACK_MSG + 3;
     static final int LAUNCH_TIMEOUT_MSG = FIRST_SUPERVISOR_STACK_MSG + 4;
     public Performance mPerf = null;
-    public boolean mIsPerfBoostEnabled = false;
-    public int lBoostTimeOut = 0;
-    public int lBoostCpuBoost = 0;
-    public int lBoostSchedBoost = 0;
-    public int lBoostPcDisblBoost = 0;
-    public int lBoostKsmBoost = 0;
+    public boolean mIsPerfLockAcquired = false;
     static final int HANDLE_DISPLAY_ADDED = FIRST_SUPERVISOR_STACK_MSG + 5;
     static final int HANDLE_DISPLAY_CHANGED = FIRST_SUPERVISOR_STACK_MSG + 6;
     static final int HANDLE_DISPLAY_REMOVED = FIRST_SUPERVISOR_STACK_MSG + 7;
@@ -315,21 +310,6 @@ public final class ActivityStackSupervisor implements DisplayListener {
         mService = service;
         mRecentTasks = recentTasks;
         mHandler = new ActivityStackSupervisorHandler(mService.mHandler.getLooper());
-        /* Is perf lock for cpu-boost enabled during App 1st launch */
-        mIsPerfBoostEnabled = mService.mContext.getResources().getBoolean(
-                   com.android.internal.R.bool.config_enableCpuBoostForAppLaunch);
-        if(mIsPerfBoostEnabled) {
-           lBoostSchedBoost = mService.mContext.getResources().getInteger(
-                   com.android.internal.R.integer.launchboost_schedboost_param);
-           lBoostTimeOut = mService.mContext.getResources().getInteger(
-                   com.android.internal.R.integer.launchboost_timeout_param);
-           lBoostCpuBoost = mService.mContext.getResources().getInteger(
-                   com.android.internal.R.integer.launchboost_cpuboost_param);
-           lBoostPcDisblBoost = mService.mContext.getResources().getInteger(
-                   com.android.internal.R.integer.launchboost_pcdisbl_param);
-           lBoostKsmBoost = mService.mContext.getResources().getInteger(
-                   com.android.internal.R.integer.launchboost_ksmboost_param);
-       }
     }
 
     /**
@@ -2826,12 +2806,12 @@ public final class ActivityStackSupervisor implements DisplayListener {
             }
         }
         /* Acquire perf lock during new app launch */
-        if (mIsPerfBoostEnabled == true && mPerf == null) {
+        if (mPerf == null) {
             mPerf = new Performance();
         }
-        if (mPerf != null) {
-            mPerf.perfLockAcquire(lBoostTimeOut, lBoostPcDisblBoost, lBoostSchedBoost,
-                                  lBoostCpuBoost, lBoostKsmBoost);
+        if (mPerf != null && mIsPerfLockAcquired == false) {
+            mPerf.perfLockAcquire(2000,0x1E01,0x20D,0x1C00);
+            mIsPerfLockAcquired = true;
         }
 
         if (DEBUG_TASKS) Slog.d(TAG, "No task found");
