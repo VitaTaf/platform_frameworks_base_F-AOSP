@@ -519,9 +519,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     int mOverscanRight = 0;
     int mOverscanBottom = 0;
 
-    // Panel Orientation default portrait
-    int mPanelOrientation = Surface.ROTATION_0;
-
     // What we do when the user long presses on home
     private int mLongPressOnHomeBehavior;
 
@@ -1422,7 +1419,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             return;
         }
         mDisplay = display;
-        mPanelOrientation = SystemProperties.getInt("persist.panel.orientation", 0) / 90;
 
         final Resources res = mContext.getResources();
         int shortSize, longSize;
@@ -5358,7 +5354,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         }
 
         if (mForceDefaultOrientation) {
-            return mPanelOrientation;
+            return Surface.ROTATION_0;
         }
 
         synchronized (mLock) {
@@ -5499,13 +5495,14 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                         return lastRotation;
                     }
                     return mPortraitRotation;
+
                 default:
                     // For USER, UNSPECIFIED, NOSENSOR, SENSOR and FULL_SENSOR,
                     // just return the preferred orientation we already calculated.
                     if (preferredRotation >= 0) {
                         return preferredRotation;
                     }
-                    return mPanelOrientation;
+                    return Surface.ROTATION_0;
             }
         }
     }
