@@ -42,7 +42,6 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.os.ServiceManager;
-import android.os.UserHandle;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -358,32 +357,6 @@ public class AudioManager {
     public static final String ACTION_USB_AUDIO_DEVICE_PLUG =
             "android.media.action.USB_AUDIO_DEVICE_PLUG";
 
-    /**
-     * @hide Broadcast intent when RemoteControlClient list is updated.
-     */
-    @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
-    public static final String RCC_CHANGED_ACTION =
-                "org.codeaurora.bluetooth.RCC_CHANGED_ACTION";
-
-    /**
-     * @hide Used for sharing the calling package name
-     */
-    public static final String EXTRA_CALLING_PACKAGE_NAME =
-            "org.codeaurora.bluetooth.EXTRA_CALLING_PACKAGE_NAME";
-
-    /**
-     * @hide Used for sharing the focus changed value
-     */
-    public static final String EXTRA_FOCUS_CHANGED_VALUE =
-            "org.codeaurora.bluetooth.EXTRA_FOCUS_CHANGED_VALUE";
-
-    /**
-     * @hide Used for sharing the availability changed value
-     */
-    public static final String EXTRA_AVAILABLITY_CHANGED_VALUE =
-            "org.codeaurora.bluetooth.EXTRA_AVAILABLITY_CHANGED_VALUE";
-
-
     /** The audio stream for phone calls */
     public static final int STREAM_VOICE_CALL = AudioSystem.STREAM_VOICE_CALL;
     /** The audio stream for system sounds */
@@ -404,29 +377,11 @@ public class AudioManager {
     public static final int STREAM_DTMF = AudioSystem.STREAM_DTMF;
     /** @hide The audio stream for text to speech (TTS) */
     public static final int STREAM_TTS = AudioSystem.STREAM_TTS;
-    /** @hide The audio stream for incall music delivery */
-    public static final int STREAM_INCALL_MUSIC = AudioSystem.STREAM_INCALL_MUSIC;
     /** Number of audio streams */
     /**
      * @deprecated Use AudioSystem.getNumStreamTypes() instead
      */
     @Deprecated public static final int NUM_STREAMS = AudioSystem.NUM_STREAMS;
-
-
-    /**  @hide Default volume index values for audio streams */
-    public static final int[] DEFAULT_STREAM_VOLUME = new int[] {
-        4,  // STREAM_VOICE_CALL
-        7,  // STREAM_SYSTEM
-        5,  // STREAM_RING
-        11, // STREAM_MUSIC
-        6,  // STREAM_ALARM
-        5,  // STREAM_NOTIFICATION
-        7,  // STREAM_BLUETOOTH_SCO
-        7,  // STREAM_SYSTEM_ENFORCED
-        11, // STREAM_DTMF
-        11,  // STREAM_TTS
-        4   // STREAM_INCALL_MUSIC
-    };
 
     /**
      * Increase the ringer volume.
@@ -2651,7 +2606,6 @@ public class AudioManager {
 
     //====================================================================
     // Remote Control
-
     /**
      * Register a component to be the sole receiver of MEDIA_BUTTON intents.
      * @param eventReceiver identifier of a {@link android.content.BroadcastReceiver}
@@ -2670,17 +2624,14 @@ public class AudioManager {
                     "receiver and context package names don't match");
             return;
         }
-
         // construct a PendingIntent for the media button and register it
         Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
-        mediaButtonIntent.addFlags(mediaButtonIntent.FLAG_RECEIVER_FOREGROUND);
         //     the associated intent will be handled by the component being registered
         mediaButtonIntent.setComponent(eventReceiver);
         PendingIntent pi = PendingIntent.getBroadcast(mContext,
                 0/*requestCode, ignored*/, mediaButtonIntent, 0/*flags*/);
         registerMediaButtonIntent(pi, eventReceiver);
     }
-
 
     /**
      * Register a component to be the sole receiver of MEDIA_BUTTON intents.  This is like
@@ -2811,13 +2762,6 @@ public class AudioManager {
             return false;
         }
         rctlr.startListeningToSessions();
-        IAudioService service = getService();
-        try {
-            service.updateRemoteControllerOnExistingMediaPlayers();
-        } catch (RemoteException e) {
-            Log.e(TAG, "Error in calling Audio service interface" +
-                "updateRemoteControllerOnExistingMediaPlayers() due to " + e);
-        }
         return true;
     }
 
@@ -2837,24 +2781,6 @@ public class AudioManager {
             return;
         }
         rctlr.stopListeningToSessions();
-    }
-
-    /**
-     * @hide
-     */
-    public void updateMediaPlayerList(String packageName, boolean toAdd) {
-        IAudioService service = getService();
-        try {
-            if (toAdd) {
-                Log.d(TAG, "updateMediaPlayerList: Add RCC " + packageName + " to List");
-                service.addMediaPlayerAndUpdateRemoteController(packageName);
-            } else {
-                Log.d(TAG, "updateMediaPlayerList: Remove RCC " + packageName + " from List");
-                service.removeMediaPlayerAndUpdateRemoteController(packageName);
-            }
-        } catch (RemoteException e) {
-            Log.e(TAG, "Exception while executing updateMediaPlayerList: " + e);
-        }
     }
 
     /**
@@ -3010,52 +2936,6 @@ public class AudioManager {
         }
     }
 
-    /**
-     * @hide
-     * Request the user of a RemoteControlClient to play the requested item.
-     * @param generationId the RemoteControlClient generation counter for which this request is
-     *     issued.
-     * @param uid uid of the song to be played.
-     * @scope scope of the file system to use
-     */
-    public void setRemoteControlClientPlayItem(long uid, int scope) {
-        IAudioService service = getService();
-        try {
-            service.setRemoteControlClientPlayItem(uid, scope);
-        } catch (RemoteException e) {
-            Log.e(TAG, "Dead object in setRemoteControlClientPlayItem(" +
-                                                    uid + ", " + scope + ")", e);
-        }
-    }
-
-    /**
-     * @hide
-     * Request the user of a RemoteControlClient to provide with the now playing list entries.
-     * @param generationId the RemoteControlClient generation counter for which this request is
-     *     issued.
-     */
-    public void getRemoteControlClientNowPlayingEntries() {
-        IAudioService service = getService();
-        try {
-            service.getRemoteControlClientNowPlayingEntries();
-        } catch (RemoteException e) {
-            Log.e(TAG, "Dead object in getRemoteControlClientNowPlayingEntries(" + ")", e);
-        }
-    }
-
-    /**
-     * @hide
-     * Request the user of a RemoteControlClient to set the music player as current browsed player.
-     */
-    public void setRemoteControlClientBrowsedPlayer() {
-        Log.d(TAG, "setRemoteControlClientBrowsedPlayer: ");
-        IAudioService service = getService();
-        try {
-            service.setRemoteControlClientBrowsedPlayer();
-        } catch (RemoteException e) {
-            Log.e(TAG, "Dead object in setRemoteControlClientBrowsedPlayer(" + ")", e);
-        }
-    }
 
     /**
      *  @hide

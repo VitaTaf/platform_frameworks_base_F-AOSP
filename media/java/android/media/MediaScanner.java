@@ -46,11 +46,9 @@ import android.sax.ElementListener;
 import android.sax.RootElement;
 import android.system.ErrnoException;
 import android.system.Os;
-import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Xml;
-import com.android.internal.telephony.PhoneConstants;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -63,10 +61,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import com.android.internal.R;
 
 /**
  * Internal service helper that no-one should use directly.
@@ -340,14 +334,8 @@ public class MediaScanner
     private boolean mDefaultAlarmSet;
     /** The filename for the default sound for the ringer ringtone. */
     private String mDefaultRingtoneFilename;
-    /** The filename for the default sound for the ringer ringtone 2. */
-    private String mDefaultRingtone2Filename;
-    /** The filename for the default sound for the ringer ringtone 3. */
-    private String mDefaultRingtone3Filename;
     /** The filename for the default sound for the notification ringtone. */
     private String mDefaultNotificationFilename;
-    /** The filename for the default sound for the mms notification ringtone. */
-    private String mDefaultMmsNotificationFilename;
     /** The filename for the default sound for the alarm ringtone. */
     private String mDefaultAlarmAlertFilename;
     /**
@@ -362,11 +350,6 @@ public class MediaScanner
     private boolean mCaseInsensitivePaths;
 
     private final BitmapFactory.Options mBitmapOptions = new BitmapFactory.Options();
-
-    // For basic VorbisComment DATE tag support. It can take two forms, YYYY
-    // or YYYY-MM. This pattern is used to extract the year for compatibility
-    // with the ID3 YEAR tag.
-    private static final Pattern DATE_YEAR_DETECT_PATTERN = Pattern.compile("^(\\d{4})(-\\d{2})?$");
 
     private static class FileEntry {
         long mRowId;
@@ -417,68 +400,13 @@ public class MediaScanner
         //mClient.testGenreNameConverter();
     }
 
-    private boolean isSoundCustomized() {
-        return mContext.getResources().getBoolean(R.bool.def_custom_sys_sound);
-    }
-
     private void setDefaultRingtoneFileNames() {
-        if (isSoundCustomized()) {
-            setCustomizedRingtoneFileNames();
-        } else {
-            mDefaultRingtoneFilename = SystemProperties.get(DEFAULT_RINGTONE_PROPERTY_PREFIX
-                    + Settings.System.RINGTONE);
-            mDefaultNotificationFilename = SystemProperties.get(DEFAULT_RINGTONE_PROPERTY_PREFIX
-                    + Settings.System.NOTIFICATION_SOUND);
-            mDefaultAlarmAlertFilename = SystemProperties.get(DEFAULT_RINGTONE_PROPERTY_PREFIX
-                    + Settings.System.ALARM_ALERT);
-        }
-    }
-
-    private void setCustomizedRingtoneFileNames() {
-        if (!TextUtils
-                .isEmpty(mContext.getResources().getString(R.string.def_custom_sys_ringtone))) {
-            mDefaultRingtoneFilename = mContext.getResources().getString(
-                    R.string.def_custom_sys_ringtone);
-        } else {
-            mDefaultRingtoneFilename = SystemProperties.get(DEFAULT_RINGTONE_PROPERTY_PREFIX
-                    + Settings.System.RINGTONE);
-        }
-
-        mDefaultRingtone2Filename = mContext.getResources().getString(
-                R.string.def_custom_sys_ringtone2);
-        if (mDefaultRingtone2Filename == null || TextUtils.isEmpty(mDefaultRingtone2Filename)) {
-            mDefaultRingtone2Filename = mDefaultRingtoneFilename;
-        }
-
-        mDefaultRingtone3Filename = mContext.getResources().getString(
-                R.string.def_custom_sys_ringtone3);
-        if (mDefaultRingtone3Filename == null || TextUtils.isEmpty(mDefaultRingtone3Filename)) {
-            mDefaultRingtone3Filename = mDefaultRingtoneFilename;
-        }
-
-        if (!TextUtils.isEmpty(mContext.getResources().getString(
-                R.string.def_custom_sys_notification))) {
-            mDefaultNotificationFilename = mContext.getResources().getString(
-                    R.string.def_custom_sys_notification);
-        } else {
-            mDefaultNotificationFilename = SystemProperties.get(DEFAULT_RINGTONE_PROPERTY_PREFIX
-                    + Settings.System.NOTIFICATION_SOUND);
-        }
-
-        mDefaultMmsNotificationFilename = mContext.getResources().getString(
-                R.string.def_custom_sys_mms);
-        if (mDefaultMmsNotificationFilename == null
-                || TextUtils.isEmpty(mDefaultMmsNotificationFilename.trim())) {
-            mDefaultMmsNotificationFilename = mDefaultNotificationFilename;
-        }
-
-        if (!TextUtils.isEmpty(mContext.getResources().getString(R.string.def_custom_sys_alarm))) {
-            mDefaultAlarmAlertFilename = mContext.getResources().getString(
-                    R.string.def_custom_sys_alarm);
-        } else {
-            mDefaultAlarmAlertFilename = SystemProperties.get(DEFAULT_RINGTONE_PROPERTY_PREFIX
-                    + Settings.System.ALARM_ALERT);
-        }
+        mDefaultRingtoneFilename = SystemProperties.get(DEFAULT_RINGTONE_PROPERTY_PREFIX
+                + Settings.System.RINGTONE);
+        mDefaultNotificationFilename = SystemProperties.get(DEFAULT_RINGTONE_PROPERTY_PREFIX
+                + Settings.System.NOTIFICATION_SOUND);
+        mDefaultAlarmAlertFilename = SystemProperties.get(DEFAULT_RINGTONE_PROPERTY_PREFIX
+                + Settings.System.ALARM_ALERT);
     }
 
     private final MyMediaScannerClient mClient = new MyMediaScannerClient();
@@ -694,13 +622,6 @@ public class MediaScanner
                 mGenre = getGenreName(value);
             } else if (name.equalsIgnoreCase("year") || name.startsWith("year;")) {
                 mYear = parseSubstring(value, 0, 0);
-            } else if (mYear == 0 && name.equalsIgnoreCase("date") || name.startsWith("date;")) {
-                // Since Android doesn't support DATE tag itself, just use it to extract
-                // the year, if the YEAR tag isn't present.
-                Matcher m = DATE_YEAR_DETECT_PATTERN.matcher(value);
-                if (m.find()) {
-                    mYear = parseSubstring(m.group(1), 0, 0);
-                }
             } else if (name.equalsIgnoreCase("tracknumber") || name.startsWith("tracknumber;")) {
                 // track number might be of the form "2/12"
                 // we just read the number before the slash
@@ -1016,11 +937,20 @@ public class MediaScanner
                 // needed.
                 if (mWasEmptyPriorToScan) {
                     if (notifications && !mDefaultNotificationSet) {
-                        needToSetSettings = needToSetSettingsForNotification(entry);
+                        if (TextUtils.isEmpty(mDefaultNotificationFilename) ||
+                                doesPathHaveFilename(entry.mPath, mDefaultNotificationFilename)) {
+                            needToSetSettings = true;
+                        }
                     } else if (ringtones && !mDefaultRingtoneSet) {
-                        needToSetSettings = needToSetSettingsForRingtone(entry);
+                        if (TextUtils.isEmpty(mDefaultRingtoneFilename) ||
+                                doesPathHaveFilename(entry.mPath, mDefaultRingtoneFilename)) {
+                            needToSetSettings = true;
+                        }
                     } else if (alarms && !mDefaultAlarmSet) {
-                        needToSetSettings = needToSetSettingsForAlarm(entry);
+                        if (TextUtils.isEmpty(mDefaultAlarmAlertFilename) ||
+                                doesPathHaveFilename(entry.mPath, mDefaultAlarmAlertFilename)) {
+                            needToSetSettings = true;
+                        }
                     }
                 }
 
@@ -1071,28 +1001,9 @@ public class MediaScanner
             if(needToSetSettings) {
                 if (notifications) {
                     setSettingIfNotSet(Settings.System.NOTIFICATION_SOUND, tableUri, rowId);
-                    if (isSoundCustomized()) {
-                        setSettingIfNotSet(Settings.System.MMS_NOTIFICATION_SOUND, tableUri, rowId);
-                    }
-
                     mDefaultNotificationSet = true;
                 } else if (ringtones) {
-                    // memorize default system ringtone persistently
-                    setSettingIfNotSet(Settings.System.DEFAULT_RINGTONE, tableUri, rowId);
-
-                    // set default ringtone uri for at least three slots
-                    // irrespective of how many sim cards are actually supported
                     setSettingIfNotSet(Settings.System.RINGTONE, tableUri, rowId);
-                    setSettingIfNotSet(Settings.System.RINGTONE_2, tableUri, rowId);
-                    setSettingIfNotSet(Settings.System.RINGTONE_3, tableUri, rowId);
-
-                    if (TelephonyManager.getDefault().isMultiSimEnabled()) {
-                        int phoneCount = TelephonyManager.getDefault().getPhoneCount();
-                        for (int i = PhoneConstants.SUB3+1; i < phoneCount; i++) {
-                            // Set the default setting to the given URI for multi SIMs
-                            setSettingIfNotSet((Settings.System.RINGTONE + "_" + (i+1)), tableUri, rowId);
-                        }
-                    }
                     mDefaultRingtoneSet = true;
                 } else if (alarms) {
                     setSettingIfNotSet(Settings.System.ALARM_ALERT, tableUri, rowId);
@@ -1101,33 +1012,6 @@ public class MediaScanner
             }
 
             return result;
-        }
-
-        private boolean needToSetSettingsForNotification(FileEntry entry) {
-            boolean result = TextUtils.isEmpty(mDefaultNotificationFilename)
-                    || doesPathHaveFilename(entry.mPath, mDefaultNotificationFilename);
-            if (isSoundCustomized()) {
-                result = result || TextUtils.isEmpty(mDefaultMmsNotificationFilename)
-                        || doesPathHaveFilename(entry.mPath, mDefaultMmsNotificationFilename);
-            }
-            return result;
-        }
-
-        private boolean needToSetSettingsForRingtone(FileEntry entry) {
-            boolean result = TextUtils.isEmpty(mDefaultRingtoneFilename)
-                    || doesPathHaveFilename(entry.mPath, mDefaultRingtoneFilename);
-            if (isSoundCustomized()) {
-                result = result || TextUtils.isEmpty(mDefaultRingtone2Filename)
-                        || doesPathHaveFilename(entry.mPath, mDefaultRingtone2Filename)
-                        || TextUtils.isEmpty(mDefaultRingtone3Filename)
-                        || doesPathHaveFilename(entry.mPath, mDefaultRingtone3Filename);
-            }
-            return result;
-        }
-
-        private boolean needToSetSettingsForAlarm(FileEntry entry) {
-            return TextUtils.isEmpty(mDefaultAlarmAlertFilename)
-                    || doesPathHaveFilename(entry.mPath, mDefaultAlarmAlertFilename);
         }
 
         private boolean doesPathHaveFilename(String path, String filename) {
@@ -1487,7 +1371,7 @@ public class MediaScanner
 
             // always scan the file, so we can return the content://media Uri for existing files
             return mClient.doScanFile(path, mimeType, lastModifiedSeconds, file.length(),
-                    file.isDirectory(), true, MediaScanner.isNoMediaPath(path));
+                    false, true, MediaScanner.isNoMediaPath(path));
         } catch (RemoteException e) {
             Log.e(TAG, "RemoteException in MediaScanner.scanFile()", e);
             return null;

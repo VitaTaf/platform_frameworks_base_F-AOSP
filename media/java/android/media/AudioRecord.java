@@ -429,11 +429,6 @@ public class AudioRecord
         // To update when supporting compressed formats
         int frameSizeInBytes = mChannelCount
             * (AudioFormat.getBytesPerSample(mAudioFormat));
-        //overwrite frameSizeInBytes for compress voip
-        if ((mRecordSource == MediaRecorder.AudioSource.VOICE_COMMUNICATION) &&
-            (mAudioFormat != AudioFormat.ENCODING_PCM_16BIT)) {
-            frameSizeInBytes = mChannelCount * 1;
-        }
         if ((audioBufferSize % frameSizeInBytes != 0) || (audioBufferSize < 1)) {
             throw new IllegalArgumentException("Invalid audio buffer size.");
         }
@@ -621,10 +616,6 @@ public class AudioRecord
         return mSessionId;
     }
 
-    private boolean isAudioRecordAllowed() {
-        String packageName = ActivityThread.currentPackageName();
-        return native_check_permission(packageName) == AppOpsManager.MODE_ALLOWED;
-    }
     //---------------------------------------------------------
     // Transport control methods
     //--------------------
@@ -634,10 +625,6 @@ public class AudioRecord
      */
     public void startRecording()
     throws IllegalStateException {
-        if (!isAudioRecordAllowed()) {
-            Log.e(TAG, "User permission denied!");
-            return;
-        }
         if (mState != STATE_INITIALIZED) {
             throw new IllegalStateException("startRecording() called on an "
                     + "uninitialized AudioRecord.");
@@ -661,10 +648,6 @@ public class AudioRecord
      */
     public void startRecording(MediaSyncEvent syncEvent)
     throws IllegalStateException {
-        if (!isAudioRecordAllowed()) {
-            Log.e(TAG, "User permission denied!");
-            return;
-        }
         if (mState != STATE_INITIALIZED) {
             throw new IllegalStateException("startRecording() called on an "
                     + "uninitialized AudioRecord.");
@@ -985,8 +968,6 @@ public class AudioRecord
 
     static private native final int native_get_min_buff_size(
             int sampleRateInHz, int channelCount, int audioFormat);
-
-    private native final int native_check_permission(String packageName);
 
 
     //---------------------------------------------------------

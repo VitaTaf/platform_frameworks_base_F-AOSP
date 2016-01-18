@@ -2187,9 +2187,9 @@ public class MediaPlayer implements SubtitleController.Listener
             throw new IllegalArgumentException("Illegal mimeType for timed text source: " + mime);
         }
 
-        final FileDescriptor dupedFd;
+        FileDescriptor fd2;
         try {
-            dupedFd = Libcore.os.dup(fd);
+            fd2 = Libcore.os.dup(fd);
         } catch (ErrnoException ex) {
             Log.e(TAG, ex.getMessage(), ex);
             throw new RuntimeException(ex);
@@ -2222,6 +2222,7 @@ public class MediaPlayer implements SubtitleController.Listener
         final SubtitleTrack track = mSubtitleController.addTrack(fFormat);
         mOutOfBandSubtitleTracks.add(track);
 
+        final FileDescriptor fd3 = fd2;
         final long offset2 = offset;
         final long length2 = length;
         final HandlerThread thread = new HandlerThread(
@@ -2231,13 +2232,14 @@ public class MediaPlayer implements SubtitleController.Listener
         Handler handler = new Handler(thread.getLooper());
         handler.post(new Runnable() {
             private int addTrack() {
+                InputStream is = null;
                 final ByteArrayOutputStream bos = new ByteArrayOutputStream();
                 try {
-                    Libcore.os.lseek(dupedFd, offset2, OsConstants.SEEK_SET);
+                    Libcore.os.lseek(fd3, offset2, OsConstants.SEEK_SET);
                     byte[] buffer = new byte[4096];
                     for (long total = 0; total < length2;) {
                         int bytesToRead = (int) Math.min(buffer.length, length2 - total);
-                        int bytes = IoBridge.read(dupedFd, buffer, 0, bytesToRead);
+                        int bytes = IoBridge.read(fd3, buffer, 0, bytesToRead);
                         if (bytes < 0) {
                             break;
                         } else {
@@ -2251,10 +2253,12 @@ public class MediaPlayer implements SubtitleController.Listener
                     Log.e(TAG, e.getMessage(), e);
                     return MEDIA_INFO_TIMED_TEXT_ERROR;
                 } finally {
-                    try {
-                        Libcore.os.close(dupedFd);
-                    } catch (ErrnoException e) {
-                        Log.e(TAG, e.getMessage(), e);
+                    if (is != null) {
+                        try {
+                            is.close();
+                        } catch (IOException e) {
+                            Log.e(TAG, e.getMessage(), e);
+                        }
                     }
                 }
             }
@@ -3072,23 +3076,6 @@ public class MediaPlayer implements SubtitleController.Listener
         return (mode == VIDEO_SCALING_MODE_SCALE_TO_FIT ||
                 mode == VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING);
     }
-
-    /** @hide
-    */
-    public boolean suspend() {
-        stayAwake(false);
-        return _suspend();
-    }
-
-    private native boolean _suspend();
-
-    /** @hide
-    */
-    public boolean resume() {
-        return _resume();
-    }
-
-    private native boolean _resume();
 
     /** @hide */
     static class TimeProvider implements MediaPlayer.OnSeekCompleteListener,

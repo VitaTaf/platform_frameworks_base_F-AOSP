@@ -433,9 +433,7 @@ class TextTrackCue extends SubtitleTrack.Cue {
                     mRegionId.equals(cue.mRegionId) &&
                     mSnapToLines == cue.mSnapToLines &&
                     mAutoLinePosition == cue.mAutoLinePosition &&
-                    (mAutoLinePosition ||
-                            ((mLinePosition != null && mLinePosition.equals(cue.mLinePosition)) ||
-                             (mLinePosition == null && cue.mLinePosition == null))) &&
+                    (mAutoLinePosition || mLinePosition == cue.mLinePosition) &&
                     mTextPosition == cue.mTextPosition &&
                     mSize == cue.mSize &&
                     mAlignment == cue.mAlignment &&

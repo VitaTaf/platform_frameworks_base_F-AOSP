@@ -49,7 +49,6 @@ public class RingtonePreference extends Preference implements
     private boolean mShowSilent;
     
     private int mRequestCode;
-    private int mSubscriptionID = 0; /* Sub-1 by default */
 
     public RingtonePreference(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
@@ -95,28 +94,6 @@ public class RingtonePreference extends Preference implements
      */
     public void setRingtoneType(int type) {
         mRingtoneType = type;
-    }
-
-    /**
-     * Returns the subscription ID.
-     *
-     * @return The current subscription ID.
-     * @see #setSubId(int)
-     * @hide
-     */
-    public int getSubId() {
-        return mSubscriptionID;
-    }
-
-    /**
-     * Sets the subscription ID.
-     *
-     * @param subId subscription ID.
-     * @see #getSubId(int)
-     * @hide
-     */
-    public void setSubId(int subId) {
-        mSubscriptionID = subId;
     }
 
     /**
@@ -185,13 +162,8 @@ public class RingtonePreference extends Preference implements
         
         ringtonePickerIntent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, mShowDefault);
         if (mShowDefault) {
-            if (getRingtoneType() == RingtoneManager.TYPE_RINGTONE) {
-                ringtonePickerIntent.putExtra(RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI,
-                    RingtoneManager.getDefaultRingtoneUriBySubId(getSubId()));
-            } else {
-                ringtonePickerIntent.putExtra(RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI,
+            ringtonePickerIntent.putExtra(RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI,
                     RingtoneManager.getDefaultUri(getRingtoneType()));
-            }
         }
 
         ringtonePickerIntent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, mShowSilent);
