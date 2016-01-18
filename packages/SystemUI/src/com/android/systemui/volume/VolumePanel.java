@@ -163,8 +163,6 @@ public class VolumePanel extends Handler implements DemoMode {
     private final View mView;
     /** Dialog hosting the panel */
     private final Dialog mDialog;
-    /** Parent view hosting the panel, if embedded */
-    private ViewGroup mParent = null;
 
     /** The visible portion of the volume overlay */
     private final ViewGroup mPanel;
@@ -176,7 +174,6 @@ public class VolumePanel extends Handler implements DemoMode {
     private ComponentName mNotificationEffectsSuppressor;
 
     private Callback mCallback;
-    private ZenModePanel.Callback mZenPanelCallback;
 
     /** Currently active stream that shows up at the top of the list of sliders */
     private int mActiveStreamType = -1;
@@ -354,10 +351,9 @@ public class VolumePanel extends Handler implements DemoMode {
         };
     }
 
-    public VolumePanel(Context context, ViewGroup parent, ZenModeController zenController) {
+    public VolumePanel(Context context, ZenModeController zenController) {
         mTag = String.format("%s.%08x", TAG, hashCode());
         mContext = context;
-        mParent = parent;
         mZenController = zenController;
         mAudioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         mAccessibilityManager = (AccessibilityManager) context.getSystemService(
@@ -384,16 +380,16 @@ public class VolumePanel extends Handler implements DemoMode {
             arr.recycle();
         }
 
-            mDialog = new Dialog(context) {
-                @Override
-                public boolean onTouchEvent(MotionEvent event) {
-                    if (isShowing() && event.getAction() == MotionEvent.ACTION_OUTSIDE &&
-                            sSafetyWarning == null) {
-                        forceTimeout(0);
-                        return true;
-                    }
-                    return false;
+        mDialog = new Dialog(context) {
+            @Override
+            public boolean onTouchEvent(MotionEvent event) {
+                if (isShowing() && event.getAction() == MotionEvent.ACTION_OUTSIDE &&
+                        sSafetyWarning == null) {
+                    forceTimeout(0);
+                    return true;
                 }
+                return false;
+            }
         };
 
         final Window window = mDialog.getWindow();
@@ -459,11 +455,6 @@ public class VolumePanel extends Handler implements DemoMode {
         mPlayMasterStreamTones = masterVolumeOnly && masterVolumeKeySounds;
 
         registerReceiver();
-
-    }
-
-    public VolumePanel(Context context, ZenModeController zenController) {
-        this(context, null, zenController);
     }
 
     public void onConfigurationChanged(Configuration newConfig) {
@@ -474,15 +465,12 @@ public class VolumePanel extends Handler implements DemoMode {
     }
 
     private void updateWidth() {
-        if (mDialog != null) {
-            final Resources res = mContext.getResources();
-            final LayoutParams lp = mDialog.getWindow().getAttributes();
-            lp.width = res.getDimensionPixelSize(
-                    com.android.systemui.R.dimen.notification_panel_width);
-            lp.gravity = res.getInteger(
-                    com.android.systemui.R.integer.notification_panel_layout_gravity);
-            mDialog.getWindow().setAttributes(lp);
-        }
+        final Resources res = mContext.getResources();
+        final LayoutParams lp = mDialog.getWindow().getAttributes();
+        lp.width = res.getDimensionPixelSize(com.android.systemui.R.dimen.notification_panel_width);
+        lp.gravity =
+                res.getInteger(com.android.systemui.R.integer.notification_panel_layout_gravity);
+        mDialog.getWindow().setAttributes(lp);
     }
 
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
@@ -527,10 +515,6 @@ public class VolumePanel extends Handler implements DemoMode {
         }
     }
 
-    public View getContentView() {
-        return mView;
-    }
-
     private void initZenModePanel() {
         mZenPanel.init(mZenController);
         mZenPanel.setCallback(new ZenModePanel.Callback() {
@@ -539,18 +523,11 @@ public class VolumePanel extends Handler implements DemoMode {
                 if (mCallback != null) {
                     mCallback.onZenSettings();
                 }
-
-                if (mZenPanelCallback != null) {
-                    mZenPanelCallback.onMoreSettings();
-                }
             }
 
             @Override
             public void onInteraction() {
                 resetTimeout();
-                if (mZenPanelCallback != null) {
-                    mZenPanelCallback.onInteraction();
-                }
             }
 
             @Override
@@ -905,10 +882,6 @@ public class VolumePanel extends Handler implements DemoMode {
         mCallback = callback;
     }
 
-    public void setZenModePanelCallback(ZenModePanel.Callback callback) {
-        mZenPanelCallback = callback;
-    }
-
     private void updateTimeoutDelay() {
         mTimeoutDelay = mDemoIcon != 0 ? TIMEOUT_DELAY_EXPANDED
                 : sSafetyWarning != null ? TIMEOUT_DELAY_SAFETY_WARNING
@@ -937,7 +910,7 @@ public class VolumePanel extends Handler implements DemoMode {
         }
     }
 
-    public void updateStates() {
+    private void updateStates() {
         final int count = mSliderPanel.getChildCount();
         for (int i = 0; i < count; i++) {
             StreamControl sc = (StreamControl) mSliderPanel.getChildAt(i).getTag();
@@ -1216,10 +1189,6 @@ public class VolumePanel extends Handler implements DemoMode {
         if (!isShowing()) {
             int stream = (streamType == STREAM_REMOTE_MUSIC) ? -1 : streamType;
             // when the stream is for remote playback, use -1 to reset the stream type evaluation
-            mAudioManager.forceVolumeControlStream(stream);
-            if (mDialog != null) {
-                mDialog.show();
-            }
             if (stream != STREAM_MASTER) {
                 mAudioManager.forceVolumeControlStream(stream);
             }
@@ -1254,8 +1223,7 @@ public class VolumePanel extends Handler implements DemoMode {
     }
 
     private boolean isShowing() {
-        //Return whether parent view is currently attached to a window if mDialog is null
-        return (mDialog != null) ? mDialog.isShowing() : mParent.isAttachedToWindow();
+        return mDialog.isShowing();
     }
 
     protected void onPlaySound(int streamType, int flags) {
@@ -1475,13 +1443,11 @@ public class VolumePanel extends Handler implements DemoMode {
 
             case MSG_TIMEOUT: {
                 if (isShowing()) {
-                    if (mDialog != null) {
-                        mDialog.dismiss();
-                        clearRemoteStreamController();
-                        mActiveStreamType = -1;
-                        if (mCallback != null) {
-                            mCallback.onVisible(false);
-                        }
+                    mDialog.dismiss();
+                    clearRemoteStreamController();
+                    mActiveStreamType = -1;
+                    if (mCallback != null) {
+                        mCallback.onVisible(false);
                     }
                 }
                 synchronized (sSafetyWarningLock) {
