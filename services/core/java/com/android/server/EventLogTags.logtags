@@ -216,3 +216,8 @@ option java_package com.android.server
 # ---------------------------
 2755 fstrim_start (time|2|3)
 2756 fstrim_finish (time|2|3)
+
+# ---------------------------
+# AudioService.java
+# ---------------------------
+40001 stream_devices_changed (stream|1), (prev_devices|1), (devices|1)
