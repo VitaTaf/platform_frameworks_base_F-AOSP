@@ -92,7 +92,7 @@ import android.util.EventLog;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
-import android.view.HardwareCanvas;
+import android.view.GLES20Canvas;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -1086,9 +1086,9 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
             public boolean onPreDraw() {
                 if (mDrawCount == 1) {
                     mStatusBarView.getViewTreeObserver().removeOnPreDrawListener(this);
-                    HardwareCanvas.setProperty("extraRasterBucket",
+                    GLES20Canvas.setProperty("extraRasterBucket",
                             Float.toString(StackScrollAlgorithm.DIMMED_SCALE));
-                    HardwareCanvas.setProperty("extraRasterBucket", Float.toString(
+                    GLES20Canvas.setProperty("extraRasterBucket", Float.toString(
                             mContext.getResources().getDimensionPixelSize(
                                     R.dimen.qs_time_collapsed_size)
                             / mContext.getResources().getDimensionPixelSize(
