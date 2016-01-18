@@ -20,7 +20,7 @@ import android.animation.Animator;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.view.HardwareCanvas;
+import android.view.GLES20Canvas;
 import android.view.RenderNodeAnimator;
 
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ abstract class RippleComponent {
     protected final Rect mBounds;
 
     /** Whether we can use hardware acceleration for the exit animation. */
-    private boolean mHasHardwareCanvas;
+    private boolean mHasGLES20Canvas;
 
     private boolean mHasPendingHardwareAnimator;
     private RenderNodeAnimatorSet mHardwareAnimator;
@@ -104,7 +104,7 @@ abstract class RippleComponent {
     public final void exit() {
         cancel();
 
-        if (mHasHardwareCanvas) {
+        if (mHasGLES20Canvas) {
             // We don't have access to a canvas here, but we expect one on the
             // next frame. We'll start the render thread animation then.
             mHasPendingHardwareAnimator = true;
@@ -143,19 +143,19 @@ abstract class RippleComponent {
      * @return {@code true} if something was drawn, {@code false} otherwise
      */
     public boolean draw(Canvas c, Paint p) {
-        final boolean hasHardwareCanvas = c.isHardwareAccelerated()
-                && c instanceof HardwareCanvas;
-        if (mHasHardwareCanvas != hasHardwareCanvas) {
-            mHasHardwareCanvas = hasHardwareCanvas;
+        final boolean hasGLES20Canvas = c.isHardwareAccelerated()
+                && c instanceof GLES20Canvas;
+        if (mHasGLES20Canvas != hasGLES20Canvas) {
+            mHasGLES20Canvas = hasGLES20Canvas;
 
-            if (!hasHardwareCanvas) {
+            if (!hasGLES20Canvas) {
                 // We've switched from hardware to non-hardware mode. Panic.
                 endHardwareAnimations();
             }
         }
 
-        if (hasHardwareCanvas) {
-            final HardwareCanvas hw = (HardwareCanvas) c;
+        if (hasGLES20Canvas) {
+            final GLES20Canvas hw = (GLES20Canvas) c;
             startPendingAnimation(hw, p);
 
             if (mHardwareAnimator != null) {
@@ -184,7 +184,7 @@ abstract class RippleComponent {
      * @param hw hardware canvas on which the animation should draw
      * @param p paint whose properties the hardware canvas should use
      */
-    private void startPendingAnimation(HardwareCanvas hw, Paint p) {
+    private void startPendingAnimation(GLES20Canvas hw, Paint p) {
         if (mHasPendingHardwareAnimator) {
             mHasPendingHardwareAnimator = false;
 
@@ -275,7 +275,7 @@ abstract class RippleComponent {
 
     protected abstract RenderNodeAnimatorSet createHardwareExit(Paint p);
 
-    protected abstract boolean drawHardware(HardwareCanvas c);
+    protected abstract boolean drawHardware(GLES20Canvas c);
 
     protected abstract boolean drawSoftware(Canvas c, Paint p);
 
@@ -296,7 +296,7 @@ abstract class RippleComponent {
             mAnimators.clear();
         }
 
-        public void start(HardwareCanvas target) {
+        public void start(GLES20Canvas target) {
             if (target == null) {
                 throw new IllegalArgumentException("Hardware canvas must be non-null");
             }

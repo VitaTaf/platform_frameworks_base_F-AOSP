@@ -2277,12 +2277,12 @@ public final class ViewRootImpl implements ViewParent,
     final Paint mResizePaint = new Paint();
 
     @Override
-    public void onHardwarePreDraw(HardwareCanvas canvas) {
+    public void onHardwarePreDraw(GLES20Canvas canvas) {
         canvas.translate(-mHardwareXOffset, -mHardwareYOffset);
     }
 
     @Override
-    public void onHardwarePostDraw(HardwareCanvas canvas) {
+    public void onHardwarePostDraw(GLES20Canvas canvas) {
         if (mResizeBuffer != null) {
             mResizePaint.setAlpha(mResizeAlpha);
             canvas.drawHardwareLayer(mResizeBuffer, mHardwareXOffset, mHardwareYOffset,

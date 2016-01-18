@@ -78,14 +78,14 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.ActionMode;
 import android.view.ActionMode.Callback;
-import android.view.RenderNode;
+import android.view.GLES20Canvas;
 import android.view.DragEvent;
 import android.view.Gravity;
-import android.view.HardwareCanvas;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.RenderNode;
 import android.view.View;
 import android.view.View.DragShadowBuilder;
 import android.view.View.OnClickListener;
@@ -1380,17 +1380,17 @@ public class Editor {
 
                     // Rebuild display list if it is invalid
                     if (blockDisplayListIsInvalid) {
-                        final HardwareCanvas hardwareCanvas = blockDisplayList.start(
+                        final GLES20Canvas GLES20Canvas = blockDisplayList.start(
                                 right - left, bottom - top);
                         try {
                             // drawText is always relative to TextView's origin, this translation
                             // brings this range of text back to the top left corner of the viewport
-                            hardwareCanvas.translate(-left, -top);
-                            layout.drawText(hardwareCanvas, blockBeginLine, blockEndLine);
+                            GLES20Canvas.translate(-left, -top);
+                            layout.drawText(GLES20Canvas, blockBeginLine, blockEndLine);
                             // No need to untranslate, previous context is popped after
                             // drawDisplayList
                         } finally {
-                            blockDisplayList.end(hardwareCanvas);
+                            blockDisplayList.end(GLES20Canvas);
                             // Same as drawDisplayList below, handled by our TextView's parent
                             blockDisplayList.setClipToBounds(false);
                         }
@@ -1401,7 +1401,7 @@ public class Editor {
                     blockDisplayList.setLeftTopRightBottom(left, top, right, bottom);
                 }
 
-                ((HardwareCanvas) canvas).drawRenderNode(blockDisplayList, null,
+                ((GLES20Canvas) canvas).drawRenderNode(blockDisplayList, null,
                         0 /* no child clipping, our TextView parent enforces it */);
 
                 endOfPreviousBlock = blockEndLine;

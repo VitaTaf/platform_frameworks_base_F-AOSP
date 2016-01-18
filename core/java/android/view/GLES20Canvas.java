@@ -16,6 +16,7 @@
 
 package android.view;
 
+import android.graphics.Canvas;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.CanvasProperty;
@@ -39,8 +40,10 @@ import android.text.TextUtils;
 
 /**
  * An implementation of Canvas on top of OpenGL ES 2.0.
+ *
+ * @hide
  */
-class GLES20Canvas extends HardwareCanvas {
+public class GLES20Canvas extends Canvas {
     private final boolean mOpaque;
     protected long mRenderer;
 
@@ -121,6 +124,17 @@ class GLES20Canvas extends HardwareCanvas {
     // Canvas management
     ///////////////////////////////////////////////////////////////////////////
 
+
+    @Override
+    public boolean isHardwareAccelerated() {
+        return true;
+    }
+
+    @Override
+    public void setBitmap(Bitmap bitmap) {
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public boolean isOpaque() {
         return mOpaque;
@@ -190,7 +204,11 @@ class GLES20Canvas extends HardwareCanvas {
 
     private static native void nInsertReorderBarrier(long renderer, boolean enableReorder);
 
-    @Override
+    /**
+     * Invoked before any drawing operation is performed in this canvas.
+     *
+     * @param dirty The dirty rectangle to update, can be null.
+     */
     public int onPreDraw(Rect dirty) {
         if (dirty != null) {
             return nPrepareDirty(mRenderer, dirty.left, dirty.top, dirty.right, dirty.bottom,
@@ -204,7 +222,9 @@ class GLES20Canvas extends HardwareCanvas {
     private static native int nPrepareDirty(long renderer, int left, int top, int right, int bottom,
             boolean opaque);
 
-    @Override
+    /**
+     * Invoked after all drawing operation have been performed.
+     */
     public void onPostDraw() {
         nFinish(mRenderer);
     }
@@ -215,7 +235,13 @@ class GLES20Canvas extends HardwareCanvas {
     // Functor
     ///////////////////////////////////////////////////////////////////////////
 
-    @Override
+    /**
+     * Calls the function specified with the drawGLFunction function pointer. This is
+     * functionality used by webkit for calling into their renderer from our display lists.
+     * This function may return true if an invalidation is needed after the call.
+     *
+     * @param drawGLFunction A native function pointer
+     */
     public int callDrawGLFunction2(long drawGLFunction) {
         return nCallDrawGLFunction(mRenderer, drawGLFunction);
     }
@@ -228,7 +254,23 @@ class GLES20Canvas extends HardwareCanvas {
 
     protected static native long nFinishRecording(long renderer);
 
-    @Override
+    /**
+     * Draws the specified display list onto this canvas. The display list can only
+     * be drawn if {@link android.view.RenderNode#isValid()} returns true.
+     *
+     * @param renderNode The RenderNode to replay.
+     */
+    public void drawRenderNode(RenderNode renderNode) {
+        drawRenderNode(renderNode, null, RenderNode.FLAG_CLIP_CHILDREN);
+    }
+
+    /**
+     * Draws the specified display list onto this canvas.
+     *
+     * @param renderNode The RenderNode to replay.
+     * @param flags Optional flags about drawing, see {@link RenderNode} for
+     *              the possible flags.
+     */
     public int drawRenderNode(RenderNode renderNode, Rect dirty, int flags) {
         return nDrawRenderNode(mRenderer, renderNode.getNativeDisplayList(), dirty, flags);
     }
@@ -240,6 +282,14 @@ class GLES20Canvas extends HardwareCanvas {
     // Hardware layer
     ///////////////////////////////////////////////////////////////////////////
 
+    /**
+     * Draws the specified layer onto this canvas.
+     *
+     * @param layer The layer to composite on this canvas
+     * @param x The left coordinate of the layer
+     * @param y The top coordinate of the layer
+     * @param paint The paint used to draw the layer
+     */
     void drawHardwareLayer(HardwareLayer layer, float x, float y, Paint paint) {
         layer.setLayerPaint(paint);
         nDrawLayer(mRenderer, layer.getLayerHandle(), x, y);
@@ -713,7 +763,6 @@ class GLES20Canvas extends HardwareCanvas {
     private static native void nDrawCircle(long renderer, float cx, float cy,
             float radius, long paint);
 
-    @Override
     public void drawCircle(CanvasProperty<Float> cx, CanvasProperty<Float> cy,
             CanvasProperty<Float> radius, CanvasProperty<Paint> paint) {
         nDrawCircle(mRenderer, cx.getNativeContainer(), cy.getNativeContainer(),
@@ -723,7 +772,6 @@ class GLES20Canvas extends HardwareCanvas {
     private static native void nDrawCircle(long renderer, long propCx,
             long propCy, long propRadius, long propPaint);
 
-    @Override
     public void drawRoundRect(CanvasProperty<Float> left, CanvasProperty<Float> top,
             CanvasProperty<Float> right, CanvasProperty<Float> bottom, CanvasProperty<Float> rx,
             CanvasProperty<Float> ry, CanvasProperty<Paint> paint) {

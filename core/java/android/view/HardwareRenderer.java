@@ -327,7 +327,7 @@ public abstract class HardwareRenderer {
          *
          * @param canvas The Canvas used to render the view.
          */
-        void onHardwarePreDraw(HardwareCanvas canvas);
+        void onHardwarePreDraw(GLES20Canvas canvas);
 
         /**
          * Invoked after a view is drawn by a hardware renderer.
@@ -335,7 +335,7 @@ public abstract class HardwareRenderer {
          *
          * @param canvas The Canvas used to render the view.
          */
-        void onHardwarePostDraw(HardwareCanvas canvas);
+        void onHardwarePostDraw(GLES20Canvas canvas);
     }
 
     /**

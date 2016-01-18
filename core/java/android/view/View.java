@@ -14155,7 +14155,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
             int height = mBottom - mTop;
             int layerType = getLayerType();
 
-            final HardwareCanvas canvas = renderNode.start(width, height);
+            final GLES20Canvas canvas = renderNode.start(width, height);
             canvas.setHighContrastText(mAttachInfo.mHighContrastText);
 
             try {
@@ -15152,7 +15152,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
                 if (layer != null && layer.isValid()) {
                     int restoreAlpha = mLayerPaint.getAlpha();
                     mLayerPaint.setAlpha((int) (alpha * 255));
-                    ((HardwareCanvas) canvas).drawHardwareLayer(layer, 0, 0, mLayerPaint);
+                    ((GLES20Canvas) canvas).drawHardwareLayer(layer, 0, 0, mLayerPaint);
                     mLayerPaint.setAlpha(restoreAlpha);
                     layerRendered = true;
                 } else {
@@ -15175,7 +15175,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
                     }
                 } else {
                     mPrivateFlags &= ~PFLAG_DIRTY_MASK;
-                    ((HardwareCanvas) canvas).drawRenderNode(renderNode, null, flags);
+                    ((GLES20Canvas) canvas).drawRenderNode(renderNode, null, flags);
                 }
             }
         } else if (cache != null) {
@@ -15448,7 +15448,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
             final RenderNode renderNode = mBackgroundRenderNode;
             if (renderNode != null && renderNode.isValid()) {
                 setBackgroundRenderNodeProperties(renderNode);
-                ((HardwareCanvas) canvas).drawRenderNode(renderNode);
+                ((GLES20Canvas) canvas).drawRenderNode(renderNode);
                 return;
             }
         }
@@ -15485,7 +15485,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
         final Rect bounds = drawable.getBounds();
         final int width = bounds.width();
         final int height = bounds.height();
-        final HardwareCanvas canvas = renderNode.start(width, height);
+        final GLES20Canvas canvas = renderNode.start(width, height);
 
         // Reverse left/top translation done by drawable canvas, which will
         // instead be applied by rendernode's LTRB bounds below. This way, the

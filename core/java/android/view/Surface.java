@@ -584,7 +584,7 @@ public class Surface implements Parcelable {
     private final class HwuiContext {
         private final RenderNode mRenderNode;
         private long mHwuiRenderer;
-        private HardwareCanvas mCanvas;
+        private GLES20Canvas mCanvas;
 
         HwuiContext() {
             mRenderNode = RenderNode.create("HwuiCanvas", null);

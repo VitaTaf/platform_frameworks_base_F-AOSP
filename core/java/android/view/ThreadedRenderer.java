@@ -279,7 +279,7 @@ public class ThreadedRenderer extends HardwareRenderer {
         updateViewTreeDisplayList(view);
 
         if (mRootNodeNeedsUpdate || !mRootNode.isValid()) {
-            HardwareCanvas canvas = mRootNode.start(mSurfaceWidth, mSurfaceHeight);
+            GLES20Canvas canvas = mRootNode.start(mSurfaceWidth, mSurfaceHeight);
             try {
                 final int saveCount = canvas.save();
                 canvas.translate(mInsetLeft, mInsetTop);
