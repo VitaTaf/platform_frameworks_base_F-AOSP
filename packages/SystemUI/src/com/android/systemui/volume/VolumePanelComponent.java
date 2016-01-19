@@ -60,8 +60,8 @@ public class VolumePanelComponent implements VolumeComponent {
         mSysui = sysui;
         mContext = context;
         mHandler = handler;
-        mAudioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-        mMediaSessionManager = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
+        mAudioManager = context.getSystemService(AudioManager.class);
+        mMediaSessionManager = context.getSystemService(MediaSessionManager.class);
         mVolumeController = new VolumeController();
         mRemoteVolumeController = new RemoteVolumeController();
         mDismissDelay = mContext.getResources().getInteger(R.integer.volume_panel_dismiss_delay);
