@@ -29,17 +29,25 @@ import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.res.Configuration;
 import android.media.AudioManager;
+import android.media.IRemoteVolumeController;
+import android.media.IVolumeController;
+import android.media.VolumePolicy;
+import android.media.session.ISessionController;
+import android.media.session.MediaController;
 import android.media.session.MediaSessionManager;
+import android.os.Bundle;
 import android.os.Handler;
-import android.os.SystemProperties;
+import android.os.RemoteException;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.systemui.R;
 import com.android.systemui.SystemUI;
+import com.android.systemui.keyguard.KeyguardViewMediator;
 import com.android.systemui.qs.tiles.DndTile;
 import com.android.systemui.statusbar.ServiceMonitor;
+import com.android.systemui.statusbar.phone.PhoneStatusBar;
 import com.android.systemui.statusbar.phone.SystemUIDialog;
 import com.android.systemui.statusbar.policy.ZenModeController;
 import com.android.systemui.statusbar.policy.ZenModeControllerImpl;
@@ -51,8 +59,6 @@ public class VolumeUI extends SystemUI {
     private static final String TAG = "VolumeUI";
     private static boolean LOGD = Log.isLoggable(TAG, Log.DEBUG);
 
-    private static final boolean USE_OLD_VOLUME = SystemProperties.getBoolean("volume.old", false);
-
     private final Handler mHandler = new Handler();
     private final Receiver mReceiver = new Receiver();
     private final RestorationNotification mRestorationNotification = new RestorationNotification();
@@ -61,10 +67,12 @@ public class VolumeUI extends SystemUI {
     private AudioManager mAudioManager;
     private NotificationManager mNotificationManager;
     private MediaSessionManager mMediaSessionManager;
+    private VolumeController mVolumeController;
+    private RemoteVolumeController mRemoteVolumeController;
     private ServiceMonitor mVolumeControllerService;
 
-    private VolumePanelComponent mOldVolume;
-    private VolumeDialogComponent mNewVolume;
+    private VolumePanel mPanel;
+    private int mDismissDelay;
 
     @Override
     public void start() {
@@ -75,10 +83,10 @@ public class VolumeUI extends SystemUI {
                 (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
         mMediaSessionManager = (MediaSessionManager) mContext
                 .getSystemService(Context.MEDIA_SESSION_SERVICE);
-        final ZenModeController zenController = new ZenModeControllerImpl(mContext, mHandler);
-        mOldVolume = new VolumePanelComponent(this, mContext, mHandler, zenController);
-        mNewVolume = new VolumeDialogComponent(this, mContext, null, zenController);
-        putComponent(VolumeComponent.class, getVolumeComponent());
+        initPanel();
+        mVolumeController = new VolumeController();
+        mRemoteVolumeController = new RemoteVolumeController();
+        putComponent(VolumeComponent.class, mVolumeController);
         mReceiver.start();
         mVolumeControllerService = new ServiceMonitor(TAG, LOGD,
                 mContext, Settings.Secure.VOLUME_CONTROLLER_SERVICE_COMPONENT,
@@ -86,35 +94,62 @@ public class VolumeUI extends SystemUI {
         mVolumeControllerService.start();
     }
 
-    private VolumeComponent getVolumeComponent() {
-        return USE_OLD_VOLUME ? mOldVolume : mNewVolume;
-    }
-
     @Override
     protected void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        if (!mEnabled) return;
-        getVolumeComponent().onConfigurationChanged(newConfig);
+        if (mPanel != null) {
+            mPanel.onConfigurationChanged(newConfig);
+        }
     }
 
     @Override
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
         pw.print("mEnabled="); pw.println(mEnabled);
-        if (!mEnabled) return;
         pw.print("mVolumeControllerService="); pw.println(mVolumeControllerService.getComponent());
-        getVolumeComponent().dump(fd, pw, args);
+        if (mPanel != null) {
+            mPanel.dump(fd, pw, args);
+        }
     }
 
-    private void setDefaultVolumeController(boolean register) {
+    private void setVolumeController(boolean register) {
         if (register) {
-            DndTile.setVisible(mContext, false);
             if (LOGD) Log.d(TAG, "Registering default volume controller");
-            getVolumeComponent().register();
+            mAudioManager.setVolumeController(mVolumeController);
+            mAudioManager.setVolumePolicy(VolumePolicy.DEFAULT);
+            mMediaSessionManager.setRemoteVolumeController(mRemoteVolumeController);
+            DndTile.setVisible(mContext, false);
         } else {
             if (LOGD) Log.d(TAG, "Unregistering default volume controller");
             mAudioManager.setVolumeController(null);
             mMediaSessionManager.setRemoteVolumeController(null);
         }
+    }
+
+    private void initPanel() {
+        mDismissDelay = mContext.getResources().getInteger(R.integer.volume_panel_dismiss_delay);
+        mPanel = new VolumePanel(mContext, new ZenModeControllerImpl(mContext, mHandler));
+        mPanel.setCallback(new VolumePanel.Callback() {
+            @Override
+            public void onZenSettings() {
+                mHandler.removeCallbacks(mStartZenSettings);
+                mHandler.post(mStartZenSettings);
+            }
+
+            @Override
+            public void onInteraction() {
+                final KeyguardViewMediator kvm = getComponent(KeyguardViewMediator.class);
+                if (kvm != null) {
+                    kvm.userActivity();
+                }
+            }
+
+            @Override
+            public void onVisible(boolean visible) {
+                if (mAudioManager != null && mVolumeController != null) {
+                    mAudioManager.notifyVolumeControllerVisible(mVolumeController, visible);
+                }
+            }
+        });
     }
 
     private String getAppLabel(ComponentName component) {
@@ -144,11 +179,83 @@ public class VolumeUI extends SystemUI {
         d.show();
     }
 
+    private final Runnable mStartZenSettings = new Runnable() {
+        @Override
+        public void run() {
+            getComponent(PhoneStatusBar.class).startActivityDismissingKeyguard(
+                    ZenModePanel.ZEN_SETTINGS, true /* onlyProvisioned */, true /* dismissShade */);
+            mPanel.postDismiss(mDismissDelay);
+        }
+    };
+
+    /** For now, simply host an unmodified base volume panel in this process. */
+    private final class VolumeController extends IVolumeController.Stub implements VolumeComponent {
+
+        @Override
+        public void displaySafeVolumeWarning(int flags) throws RemoteException {
+            mPanel.postDisplaySafeVolumeWarning(flags);
+        }
+
+        @Override
+        public void volumeChanged(int streamType, int flags)
+                throws RemoteException {
+            mPanel.postVolumeChanged(streamType, flags);
+        }
+
+        @Override
+        public void masterMuteChanged(int flags) throws RemoteException {
+            // no-op
+        }
+
+        @Override
+        public void setLayoutDirection(int layoutDirection)
+                throws RemoteException {
+            mPanel.postLayoutDirection(layoutDirection);
+        }
+
+        @Override
+        public void dismiss() throws RemoteException {
+            dismissNow();
+        }
+
+        @Override
+        public ZenModeController getZenController() {
+            return mPanel.getZenController();
+        }
+
+        @Override
+        public void dispatchDemoCommand(String command, Bundle args) {
+            mPanel.dispatchDemoCommand(command, args);
+        }
+
+        @Override
+        public void dismissNow() {
+            mPanel.postDismiss(0);
+        }
+    }
+
+    private final class RemoteVolumeController extends IRemoteVolumeController.Stub {
+
+        @Override
+        public void remoteVolumeChanged(ISessionController binder, int flags)
+                throws RemoteException {
+            MediaController controller = new MediaController(mContext, binder);
+            mPanel.postRemoteVolumeChanged(controller, flags);
+        }
+
+        @Override
+        public void updateRemoteController(ISessionController session) throws RemoteException {
+            mPanel.postRemoteSliderVisibility(session != null);
+            // TODO stash default session in case the slider can be opened other
+            // than by remoteVolumeChanged.
+        }
+    }
+
     private final class ServiceMonitorCallbacks implements ServiceMonitor.Callbacks {
         @Override
         public void onNoService() {
             if (LOGD) Log.d(TAG, "onNoService");
-            setDefaultVolumeController(true);
+            setVolumeController(true);
             mRestorationNotification.hide();
             if (!mVolumeControllerService.isPackageAvailable()) {
                 mVolumeControllerService.setComponent(null);
@@ -160,8 +267,8 @@ public class VolumeUI extends SystemUI {
             if (LOGD) Log.d(TAG, "onServiceStartAttempt");
             // poke the setting to update the uid
             mVolumeControllerService.setComponent(mVolumeControllerService.getComponent());
-            setDefaultVolumeController(false);
-            getVolumeComponent().dismissNow();
+            setVolumeController(false);
+            mVolumeController.dismissNow();
             mRestorationNotification.show();
             return 0;
         }

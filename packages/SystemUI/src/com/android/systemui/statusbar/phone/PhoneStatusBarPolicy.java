@@ -282,7 +282,7 @@ public class PhoneStatusBarPolicy {
         int volumeIconId = 0;
         String volumeDescription = null;
 
-        if (DndTile.isVisible(mContext) || DndTile.isCombinedIcon(mContext)) {
+        if (DndTile.isVisible(mContext)) {
             zenVisible = mZen != Global.ZEN_MODE_OFF;
             zenIconId = R.drawable.stat_sys_dnd;
             zenDescription = mContext.getString(R.string.quick_settings_dnd_label);
