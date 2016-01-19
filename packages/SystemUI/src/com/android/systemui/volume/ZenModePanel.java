@@ -23,7 +23,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
-import android.content.res.Resources;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Handler;
@@ -151,6 +150,7 @@ public class ZenModePanel extends LinearLayout {
         if (mEmbedded == embedded) return;
         mEmbedded = embedded;
         mZenButtonsContainer.setLayoutTransition(mEmbedded ? null : newLayoutTransition(null));
+        setLayoutTransition(mEmbedded ? null : newLayoutTransition(null));
         if (mEmbedded) {
             mZenButtonsContainer.setBackground(null);
         } else {
@@ -167,12 +167,10 @@ public class ZenModePanel extends LinearLayout {
         super.onFinishInflate();
 
         mZenButtons = (SegmentedButtons) findViewById(R.id.zen_buttons);
-        mZenButtons.addButton(R.string.interruption_level_none, R.drawable.ic_zen_none,
-                Global.ZEN_MODE_NO_INTERRUPTIONS);
-        mZenButtons.addButton(R.string.interruption_level_priority, R.drawable.ic_zen_important,
+        mZenButtons.addButton(R.string.interruption_level_none, Global.ZEN_MODE_NO_INTERRUPTIONS);
+        mZenButtons.addButton(R.string.interruption_level_priority,
                 Global.ZEN_MODE_IMPORTANT_INTERRUPTIONS);
-        mZenButtons.addButton(R.string.interruption_level_all, R.drawable.ic_zen_all,
-                Global.ZEN_MODE_OFF);
+        mZenButtons.addButton(R.string.interruption_level_all, Global.ZEN_MODE_OFF);
         mZenButtons.setCallback(mZenButtonsCallback);
 
         mZenButtonsContainer = (ViewGroup) findViewById(R.id.zen_buttons_container);
@@ -276,6 +274,7 @@ public class ZenModePanel extends LinearLayout {
 
     private void setExpanded(boolean expanded) {
         if (expanded == mExpanded) return;
+        if (DEBUG) Log.d(mTag, "setExpanded " + expanded);
         mExpanded = expanded;
         if (mExpanded) {
             ensureSelection();
@@ -359,6 +358,10 @@ public class ZenModePanel extends LinearLayout {
         return condition == null ? null : condition.copy();
     }
 
+    public String getExitConditionText() {
+        return mExitConditionText;
+    }
+
     private void refreshExitConditionText() {
         if (mExitCondition == null) {
             mExitConditionText = foreverSummary();
@@ -429,7 +432,7 @@ public class ZenModePanel extends LinearLayout {
         mZenSubheadExpanded.setVisibility(expanded ? VISIBLE : GONE);
         mZenSubheadCollapsed.setVisibility(!expanded ? VISIBLE : GONE);
         mMoreSettings.setVisibility(zenImportant && expanded ? VISIBLE : GONE);
-        mZenConditions.setVisibility(!zenOff && expanded ? VISIBLE : GONE);
+        mZenConditions.setVisibility(mEmbedded || !zenOff && expanded ? VISIBLE : GONE);
 
         if (zenNone) {
             mZenSubheadExpanded.setText(R.string.zen_no_interruptions_with_warning);
