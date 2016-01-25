@@ -23,17 +23,21 @@ import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.CanvasProperty;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
+import android.view.GLES20Canvas;
+import android.view.RenderNodeAnimator;
 import android.view.View;
 import android.view.ViewAnimationUtils;
 import android.view.animation.AnimationUtils;
 import android.view.animation.Interpolator;
 import android.widget.ImageView;
 import com.android.systemui.R;
+import com.android.systemui.statusbar.phone.PhoneStatusBar;
 
 /**
  * An ImageView which does not have overlapping renderings commands and therefore does not need a
@@ -71,6 +75,14 @@ public class KeyguardAffordanceView extends ImageView {
     private float mCircleStartRadius;
     private float mMaxCircleSize;
     private Animator mPreviewClipper;
+    private boolean mSupportHardware;
+    private boolean mFinishing;
+
+    private CanvasProperty<Float> mHwCircleRadius;
+    private CanvasProperty<Float> mHwCenterX;
+    private CanvasProperty<Float> mHwCenterY;
+    private CanvasProperty<Paint> mHwCirclePaint;
+
     private AnimatorListenerAdapter mClipEndListener = new AnimatorListenerAdapter() {
         @Override
         public void onAnimationEnd(Animator animation) {
@@ -138,6 +150,7 @@ public class KeyguardAffordanceView extends ImageView {
 
     @Override
     protected void onDraw(Canvas canvas) {
+        mSupportHardware = canvas.isHardwareAccelerated();
         drawBackgroundCircle(canvas);
         canvas.save();
         canvas.scale(mImageScale, mImageScale, getWidth() / 2, getHeight() / 2);
@@ -162,8 +175,14 @@ public class KeyguardAffordanceView extends ImageView {
 
     private void drawBackgroundCircle(Canvas canvas) {
         if (mCircleRadius > 0) {
-            updateCircleColor();
-            canvas.drawCircle(mCenterX, mCenterY, mCircleRadius, mCirclePaint);
+            if (mFinishing && mSupportHardware) {
+                GLES20Canvas GLES20Canvas = (GLES20Canvas) canvas;
+                GLES20Canvas.drawCircle(mHwCenterX, mHwCenterY, mHwCircleRadius,
+                        mHwCirclePaint);
+            } else {
+                updateCircleColor();
+                canvas.drawCircle(mCenterX, mCenterY, mCircleRadius, mCirclePaint);
+            }
         }
     }
 
@@ -184,15 +203,23 @@ public class KeyguardAffordanceView extends ImageView {
     public void finishAnimation(float velocity, final Runnable mAnimationEndRunnable) {
         cancelAnimator(mCircleAnimator);
         cancelAnimator(mPreviewClipper);
+        mFinishing = true;
         mCircleStartRadius = mCircleRadius;
         float maxCircleSize = getMaxCircleSize();
-        ValueAnimator animatorToRadius = getAnimatorToRadius(maxCircleSize);
+        Animator animatorToRadius;
+        if (mSupportHardware) {
+            initHwProperties();
+            animatorToRadius = getRtAnimatorToRadius(maxCircleSize);
+        } else {
+            animatorToRadius = getAnimatorToRadius(maxCircleSize);
+        }
         mFlingAnimationUtils.applyDismissing(animatorToRadius, mCircleRadius, maxCircleSize,
                 velocity, maxCircleSize);
         animatorToRadius.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
                 mAnimationEndRunnable.run();
+                mFinishing = false;
             }
         });
         animatorToRadius.start();
@@ -206,7 +233,32 @@ public class KeyguardAffordanceView extends ImageView {
                     velocity, maxCircleSize);
             mPreviewClipper.addListener(mClipEndListener);
             mPreviewClipper.start();
+            if (mSupportHardware) {
+                startRtCircleFadeOut(animatorToRadius.getDuration());
+            }
         }
+    }
+
+    private void startRtCircleFadeOut(long duration) {
+        RenderNodeAnimator animator = new RenderNodeAnimator(mHwCirclePaint,
+                RenderNodeAnimator.PAINT_ALPHA, 0);
+        animator.setDuration(duration);
+        animator.setInterpolator(PhoneStatusBar.ALPHA_OUT);
+        animator.setTarget(this);
+        animator.start();
+    }
+
+    private Animator getRtAnimatorToRadius(float circleRadius) {
+        RenderNodeAnimator animator = new RenderNodeAnimator(mHwCircleRadius, circleRadius);
+        animator.setTarget(this);
+        return animator;
+    }
+
+    private void initHwProperties() {
+        mHwCenterX = CanvasProperty.createFloat(mCenterX);
+        mHwCenterY = CanvasProperty.createFloat(mCenterY);
+        mHwCirclePaint = CanvasProperty.createPaint(mCirclePaint);
+        mHwCircleRadius = CanvasProperty.createFloat(mCircleRadius);
     }
 
     private float getMaxCircleSize() {
