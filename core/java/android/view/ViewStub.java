@@ -16,8 +16,6 @@
 
 package android.view;
 
-import android.annotation.IdRes;
-import android.annotation.LayoutRes;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
@@ -89,7 +87,7 @@ public final class ViewStub extends View {
      * @param context The application's environment.
      * @param layoutResource The reference to a layout resource that will be inflated.
      */
-    public ViewStub(Context context, @LayoutRes int layoutResource) {
+    public ViewStub(Context context, int layoutResource) {
         this(context, null);
 
         mLayoutResource = layoutResource;
@@ -127,7 +125,6 @@ public final class ViewStub extends View {
      * @see #setInflatedId(int)
      * @attr ref android.R.styleable#ViewStub_inflatedId
      */
-    @IdRes
     public int getInflatedId() {
         return mInflatedId;
     }
@@ -143,7 +140,7 @@ public final class ViewStub extends View {
      * @attr ref android.R.styleable#ViewStub_inflatedId
      */
     @android.view.RemotableViewMethod
-    public void setInflatedId(@IdRes int inflatedId) {
+    public void setInflatedId(int inflatedId) {
         mInflatedId = inflatedId;
     }
 
@@ -159,7 +156,6 @@ public final class ViewStub extends View {
      * @see #inflate()
      * @attr ref android.R.styleable#ViewStub_layout
      */
-    @LayoutRes
     public int getLayoutResource() {
         return mLayoutResource;
     }
@@ -177,7 +173,7 @@ public final class ViewStub extends View {
      * @attr ref android.R.styleable#ViewStub_layout
      */
     @android.view.RemotableViewMethod
-    public void setLayoutResource(@LayoutRes int layoutResource) {
+    public void setLayoutResource(int layoutResource) {
         mLayoutResource = layoutResource;
     }
 

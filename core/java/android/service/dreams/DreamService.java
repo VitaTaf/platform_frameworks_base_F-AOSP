@@ -18,8 +18,6 @@ package android.service.dreams;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 
-import android.annotation.IdRes;
-import android.annotation.LayoutRes;
 import android.annotation.Nullable;
 import android.annotation.SdkConstant;
 import android.annotation.SdkConstant.SdkConstantType;
@@ -385,7 +383,7 @@ public class DreamService extends Service implements Window.Callback {
      * @see #setContentView(android.view.View)
      * @see #setContentView(android.view.View, android.view.ViewGroup.LayoutParams)
      */
-    public void setContentView(@LayoutRes int layoutResID) {
+    public void setContentView(int layoutResID) {
         getWindow().setContentView(layoutResID);
     }
 
@@ -446,7 +444,7 @@ public class DreamService extends Service implements Window.Callback {
      * @return The view if found or null otherwise.
      */
     @Nullable
-    public View findViewById(@IdRes int id) {
+    public View findViewById(int id) {
         return getWindow().findViewById(id);
     }
 

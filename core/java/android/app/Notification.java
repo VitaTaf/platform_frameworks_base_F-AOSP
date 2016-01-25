@@ -16,7 +16,6 @@
 
 package android.app;
 
-import android.annotation.DrawableRes;
 import android.annotation.IntDef;
 import android.annotation.SdkConstant;
 import android.annotation.SdkConstant.SdkConstantType;
@@ -166,7 +165,6 @@ public class Notification implements Parcelable
      * The resource id of a drawable to use as the icon in the status bar.
      * This is required; notifications with an invalid icon resource will not be shown.
      */
-    @DrawableRes
     public int icon;
 
     /**
@@ -2134,7 +2132,7 @@ public class Notification implements Parcelable
          *            A resource ID in the application's package of the drawable to use.
          * @see Notification#icon
          */
-        public Builder setSmallIcon(@DrawableRes int icon) {
+        public Builder setSmallIcon(int icon) {
             mSmallIcon = icon;
             return this;
         }
@@ -2150,7 +2148,7 @@ public class Notification implements Parcelable
          * @see Notification#icon
          * @see Notification#iconLevel
          */
-        public Builder setSmallIcon(@DrawableRes int icon, int level) {
+        public Builder setSmallIcon(int icon, int level) {
             mSmallIcon = icon;
             mSmallIconLevel = level;
             return this;

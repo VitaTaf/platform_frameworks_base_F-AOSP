@@ -17,7 +17,6 @@
 package android.media;
 
 import android.Manifest;
-import android.annotation.DrawableRes;
 import android.app.ActivityThread;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -2084,7 +2083,7 @@ public class MediaRouter {
          *
          * @param resId Resource ID of an icon drawable to use to represent this route
          */
-        public void setIconResource(@DrawableRes int resId) {
+        public void setIconResource(int resId) {
             setIconDrawable(sStatic.mResources.getDrawable(resId));
         }
 
@@ -2394,7 +2393,7 @@ public class MediaRouter {
          *
          * @param resId Resource ID of an icon drawable to use to represent this group
          */
-        public void setIconResource(@DrawableRes int resId) {
+        public void setIconResource(int resId) {
             setIconDrawable(sStatic.mResources.getDrawable(resId));
         }
 

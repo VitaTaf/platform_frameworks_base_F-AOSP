@@ -16,9 +16,6 @@
 
 package android.app;
 
-import android.annotation.DrawableRes;
-import android.annotation.StringRes;
-import android.annotation.XmlRes;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Intent;
@@ -727,7 +724,7 @@ final class ApplicationPackageManager extends PackageManager {
         }
     }
 
-    @Override public Drawable getDrawable(String packageName, @DrawableRes int resid,
+    @Override public Drawable getDrawable(String packageName, int resid,
                                           ApplicationInfo appInfo) {
         ResourceName name = new ResourceName(packageName, resid);
         Drawable dr = getCachedIcon(name);
@@ -1134,7 +1131,7 @@ final class ApplicationPackageManager extends PackageManager {
     }
 
     @Override
-    public CharSequence getText(String packageName, @StringRes int resid,
+    public CharSequence getText(String packageName, int resid,
                                 ApplicationInfo appInfo) {
         ResourceName name = new ResourceName(packageName, resid);
         CharSequence text = getCachedString(name);
@@ -1167,7 +1164,7 @@ final class ApplicationPackageManager extends PackageManager {
     }
 
     @Override
-    public XmlResourceParser getXml(String packageName, @XmlRes int resid,
+    public XmlResourceParser getXml(String packageName, int resid,
                                     ApplicationInfo appInfo) {
         if (appInfo == null) {
             try {

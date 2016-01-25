@@ -16,10 +16,6 @@
 
 package android.app;
 
-import android.annotation.DrawableRes;
-import android.annotation.IdRes;
-import android.annotation.LayoutRes;
-import android.annotation.StringRes;
 import com.android.internal.app.WindowDecorActionBar;
 
 import android.annotation.Nullable;
@@ -482,7 +478,7 @@ public class Dialog implements DialogInterface, Window.Callback,
      * @return The view with the given id or null.
      */
     @Nullable
-    public View findViewById(@IdRes int id) {
+    public View findViewById(int id) {
         return mWindow.findViewById(id);
     }
 
@@ -492,7 +488,7 @@ public class Dialog implements DialogInterface, Window.Callback,
      * 
      * @param layoutResID Resource ID to be inflated.
      */
-    public void setContentView(@LayoutRes int layoutResID) {
+    public void setContentView(int layoutResID) {
         mWindow.setContentView(layoutResID);
     }
 
@@ -546,7 +542,7 @@ public class Dialog implements DialogInterface, Window.Callback,
      *
      * @param titleId the title's text resource identifier
      */
-    public void setTitle(@StringRes int titleId) {
+    public void setTitle(int titleId) {
         setTitle(mContext.getText(titleId));
     }
 
@@ -1076,7 +1072,7 @@ public class Dialog implements DialogInterface, Window.Callback,
      * Convenience for calling
      * {@link android.view.Window#setFeatureDrawableResource}.
      */
-    public final void setFeatureDrawableResource(int featureId, @DrawableRes int resId) {
+    public final void setFeatureDrawableResource(int featureId, int resId) {
         getWindow().setFeatureDrawableResource(featureId, resId);
     }
 

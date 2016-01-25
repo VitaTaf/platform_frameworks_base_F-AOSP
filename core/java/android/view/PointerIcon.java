@@ -18,7 +18,6 @@ package android.view;
 
 import com.android.internal.util.XmlUtils;
 
-import android.annotation.XmlRes;
 import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
@@ -193,7 +192,7 @@ public final class PointerIcon implements Parcelable {
      * @throws Resources.NotFoundException if the resource was not found or the drawable
      * linked in the resource was not found.
      */
-    public static PointerIcon loadCustomIcon(Resources resources, @XmlRes int resourceId) {
+    public static PointerIcon loadCustomIcon(Resources resources, int resourceId) {
         if (resources == null) {
             throw new IllegalArgumentException("resources must not be null");
         }
@@ -374,7 +373,7 @@ public final class PointerIcon implements Parcelable {
         return true;
     }
 
-    private void loadResource(Context context, Resources resources, @XmlRes int resourceId) {
+    private void loadResource(Context context, Resources resources, int resourceId) {
         final XmlResourceParser parser = resources.getXml(resourceId);
         final int bitmapRes;
         final float hotSpotX;

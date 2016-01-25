@@ -17,8 +17,6 @@
 package android.preference;
 
 
-import android.annotation.DrawableRes;
-import android.annotation.StringRes;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
@@ -170,7 +168,7 @@ public abstract class DialogPreference extends Preference implements
      * 
      * @param dialogIconRes The icon, as a resource ID.
      */
-    public void setDialogIcon(@DrawableRes int dialogIconRes) {
+    public void setDialogIcon(int dialogIconRes) {
         mDialogIcon = getContext().getDrawable(dialogIconRes);
     }
     
@@ -196,7 +194,7 @@ public abstract class DialogPreference extends Preference implements
      * @see #setPositiveButtonText(CharSequence)
      * @param positiveButtonTextResId The positive button text as a resource.
      */
-    public void setPositiveButtonText(@StringRes int positiveButtonTextResId) {
+    public void setPositiveButtonText(int positiveButtonTextResId) {
         setPositiveButtonText(getContext().getString(positiveButtonTextResId));
     }
     
@@ -224,7 +222,7 @@ public abstract class DialogPreference extends Preference implements
      * @see #setNegativeButtonText(CharSequence)
      * @param negativeButtonTextResId The negative button text as a resource.
      */
-    public void setNegativeButtonText(@StringRes int negativeButtonTextResId) {
+    public void setNegativeButtonText(int negativeButtonTextResId) {
         setNegativeButtonText(getContext().getString(negativeButtonTextResId));
     }
     

@@ -16,7 +16,6 @@
 
 package android.content.res;
 
-import android.annotation.AnyRes;
 import android.annotation.Nullable;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
@@ -690,7 +689,6 @@ public class TypedArray {
      *
      * @return Attribute resource identifier, or defValue if not defined.
      */
-    @AnyRes
     public int getResourceId(int index, int defValue) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");

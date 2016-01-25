@@ -21,7 +21,6 @@ import android.animation.AnimatorInflater;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.Nullable;
 import android.content.Context;
-import android.annotation.IdRes;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.os.Bundle;
@@ -397,7 +396,7 @@ final class FragmentManagerState implements Parcelable {
  */
 interface FragmentContainer {
     @Nullable
-    public View findViewById(@IdRes int id);
+    public View findViewById(int id);
     public boolean hasView();
 }
 

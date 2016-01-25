@@ -19,8 +19,6 @@ package android.view.animation;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
-import android.annotation.AnimRes;
-import android.annotation.InterpolatorRes;
 import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.Resources.Theme;
@@ -67,7 +65,7 @@ public class AnimationUtils {
      * @return The animation object reference by the specified id
      * @throws NotFoundException when the animation cannot be loaded
      */
-    public static Animation loadAnimation(Context context, @AnimRes int id)
+    public static Animation loadAnimation(Context context, int id)
             throws NotFoundException {
 
         XmlResourceParser parser = null;
@@ -145,7 +143,7 @@ public class AnimationUtils {
      * @return The animation object reference by the specified id
      * @throws NotFoundException when the layout animation controller cannot be loaded
      */
-    public static LayoutAnimationController loadLayoutAnimation(Context context, @AnimRes int id)
+    public static LayoutAnimationController loadLayoutAnimation(Context context, int id)
             throws NotFoundException {
 
         XmlResourceParser parser = null;
@@ -268,8 +266,7 @@ public class AnimationUtils {
      * @return The animation object reference by the specified id
      * @throws NotFoundException
      */
-    public static Interpolator loadInterpolator(Context context, @InterpolatorRes int id)
-            throws NotFoundException {
+    public static Interpolator loadInterpolator(Context context, int id) throws NotFoundException {
         XmlResourceParser parser = null;
         try {
             parser = context.getResources().getAnimation(id);

@@ -17,7 +17,6 @@
 package android.view;
 
 import android.animation.LayoutTransition;
-import android.annotation.IdRes;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -3608,7 +3607,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * {@hide}
      */
     @Override
-    protected View findViewTraversal(@IdRes int id) {
+    protected View findViewTraversal(int id) {
         if (id == mID) {
             return this;
         }

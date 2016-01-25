@@ -16,7 +16,6 @@
 
 package android.preference;
 
-import android.annotation.StringRes;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.TypedArray;
@@ -117,7 +116,7 @@ public abstract class TwoStatePreference extends Preference {
      * @see #setSummaryOn(CharSequence)
      * @param summaryResId The summary as a resource.
      */
-    public void setSummaryOn(@StringRes int summaryResId) {
+    public void setSummaryOn(int summaryResId) {
         setSummaryOn(getContext().getString(summaryResId));
     }
 
@@ -145,7 +144,7 @@ public abstract class TwoStatePreference extends Preference {
      * @see #setSummaryOff(CharSequence)
      * @param summaryResId The summary as a resource.
      */
-    public void setSummaryOff(@StringRes int summaryResId) {
+    public void setSummaryOff(int summaryResId) {
         setSummaryOff(getContext().getString(summaryResId));
     }
 

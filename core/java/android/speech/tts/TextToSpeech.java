@@ -15,7 +15,6 @@
  */
 package android.speech.tts;
 
-import android.annotation.RawRes;
 import android.annotation.SdkConstant;
 import android.annotation.SdkConstant.SdkConstantType;
 import android.content.ComponentName;
@@ -885,7 +884,7 @@ public class TextToSpeech {
      *
      * @return Code indicating success or failure. See {@link #ERROR} and {@link #SUCCESS}.
      */
-    public int addSpeech(String text, String packagename, @RawRes int resourceId) {
+    public int addSpeech(String text, String packagename, int resourceId) {
         synchronized (mStartLock) {
             mUtterances.put(text, makeResourceUri(packagename, resourceId));
             return SUCCESS;
@@ -994,7 +993,7 @@ public class TextToSpeech {
      *
      * @return Code indicating success or failure. See {@link #ERROR} and {@link #SUCCESS}.
      */
-    public int addEarcon(String earcon, String packagename, @RawRes int resourceId) {
+    public int addEarcon(String earcon, String packagename, int resourceId) {
         synchronized(mStartLock) {
             mEarcons.put(earcon, makeResourceUri(packagename, resourceId));
             return SUCCESS;

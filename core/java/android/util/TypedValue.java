@@ -16,8 +16,6 @@
 
 package android.util;
 
-import android.annotation.AnyRes;
-
 /**
  * Container for a dynamically typed data value.  Primarily used with
  * {@link android.content.res.Resources} for holding resource values.
@@ -180,7 +178,6 @@ public class TypedValue {
     public int assetCookie;
 
     /** If Value came from a resource, this holds the corresponding resource id. */
-    @AnyRes
     public int resourceId;
 
     /** If Value came from a resource, these are the configurations for which

@@ -16,7 +16,6 @@
 
 package android.widget;
 
-import android.annotation.DrawableRes;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.TypedArray;
@@ -2706,7 +2705,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Te
      *
      * @attr ref android.R.styleable#AbsListView_listSelector
      */
-    public void setSelector(@DrawableRes int resID) {
+    public void setSelector(int resID) {
         setSelector(getContext().getDrawable(resID));
     }
 

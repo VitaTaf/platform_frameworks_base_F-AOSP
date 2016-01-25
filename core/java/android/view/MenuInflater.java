@@ -21,7 +21,6 @@ import com.android.internal.view.menu.MenuItemImpl;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
-import android.annotation.MenuRes;
 import android.app.Activity;
 import android.content.Context;
 import android.content.ContextWrapper;
@@ -102,7 +101,7 @@ public class MenuInflater {
      * @param menu The Menu to inflate into. The items and submenus will be
      *            added to this Menu.
      */
-    public void inflate(@MenuRes int menuRes, Menu menu) {
+    public void inflate(int menuRes, Menu menu) {
         XmlResourceParser parser = null;
         try {
             parser = mContext.getResources().getLayout(menuRes);

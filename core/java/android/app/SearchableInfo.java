@@ -19,7 +19,6 @@ package android.app;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
-import android.annotation.StringRes;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
@@ -683,7 +682,6 @@ public final class SearchableInfo implements Parcelable {
      * @return A resource id, or {@code 0} if no language model was specified.
      * @see android.R.styleable#Searchable_voiceLanguageModel
      */
-    @StringRes
     public int getVoiceLanguageModeId() {
         return mVoiceLanguageModeId;
     }
@@ -694,7 +692,6 @@ public final class SearchableInfo implements Parcelable {
      * @return A resource id, or {@code 0} if no voice prompt text was specified.
      * @see android.R.styleable#Searchable_voicePromptText
      */
-    @StringRes
     public int getVoicePromptTextId() {
         return mVoicePromptTextId;
     }
@@ -705,7 +702,6 @@ public final class SearchableInfo implements Parcelable {
      * @return A resource id, or {@code 0} if no language was specified.
      * @see android.R.styleable#Searchable_voiceLanguage
      */
-    @StringRes
     public int getVoiceLanguageId() {
         return mVoiceLanguageId;
     }

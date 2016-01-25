@@ -21,7 +21,6 @@ import com.android.internal.R;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
-import android.annotation.LayoutRes;
 import android.annotation.Nullable;
 import android.content.Context;
 import android.content.res.Resources;
@@ -370,7 +369,7 @@ public abstract class LayoutInflater {
      *         this is the root View; otherwise it is the root of the inflated
      *         XML file.
      */
-    public View inflate(@LayoutRes int resource, @Nullable ViewGroup root) {
+    public View inflate(int resource, @Nullable ViewGroup root) {
         return inflate(resource, root, root != null);
     }
 
@@ -411,7 +410,7 @@ public abstract class LayoutInflater {
      *         attachToRoot is true, this is root; otherwise it is the root of
      *         the inflated XML file.
      */
-    public View inflate(@LayoutRes int resource, @Nullable ViewGroup root, boolean attachToRoot) {
+    public View inflate(int resource, @Nullable ViewGroup root, boolean attachToRoot) {
         final Resources res = getContext().getResources();
         if (DEBUG) {
             Log.d(TAG, "INFLATING from resource: \"" + res.getResourceName(resource) + "\" ("

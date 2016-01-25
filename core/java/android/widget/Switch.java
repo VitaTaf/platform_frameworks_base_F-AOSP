@@ -17,9 +17,7 @@
 package android.widget;
 
 import android.animation.ObjectAnimator;
-import android.annotation.DrawableRes;
 import android.annotation.Nullable;
-import android.annotation.StyleRes;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
@@ -263,7 +261,7 @@ public class Switch extends CompoundButton {
      *
      * @attr ref android.R.styleable#Switch_switchTextAppearance
      */
-    public void setSwitchTextAppearance(Context context, @StyleRes int resid) {
+    public void setSwitchTextAppearance(Context context, int resid) {
         TypedArray appearance =
                 context.obtainStyledAttributes(resid,
                         com.android.internal.R.styleable.TextAppearance);
@@ -471,7 +469,7 @@ public class Switch extends CompoundButton {
      *
      * @attr ref android.R.styleable#Switch_track
      */
-    public void setTrackResource(@DrawableRes int resId) {
+    public void setTrackResource(int resId) {
         setTrackDrawable(getContext().getDrawable(resId));
     }
 
@@ -593,7 +591,7 @@ public class Switch extends CompoundButton {
      *
      * @attr ref android.R.styleable#Switch_thumb
      */
-    public void setThumbResource(@DrawableRes int resId) {
+    public void setThumbResource(int resId) {
         setThumbDrawable(getContext().getDrawable(resId));
     }
 

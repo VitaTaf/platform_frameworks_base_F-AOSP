@@ -16,7 +16,6 @@
 
 package android.widget;
 
-import android.annotation.DrawableRes;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.database.DataSetObserver;
@@ -357,7 +356,7 @@ public class AutoCompleteTextView extends EditText implements Filter.FilterListe
      * 
      * @attr ref android.R.styleable#PopupWindow_popupBackground
      */
-    public void setDropDownBackgroundResource(@DrawableRes int id) {
+    public void setDropDownBackgroundResource(int id) {
         mPopup.setBackgroundDrawable(getContext().getDrawable(id));
     }
     

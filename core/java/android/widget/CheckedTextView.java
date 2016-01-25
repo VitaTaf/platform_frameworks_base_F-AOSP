@@ -18,7 +18,6 @@ package android.widget;
 
 import com.android.internal.R;
 
-import android.annotation.DrawableRes;
 import android.annotation.Nullable;
 import android.content.Context;
 import android.content.res.ColorStateList;
@@ -32,6 +31,7 @@ import android.view.RemotableViewMethod;
 import android.view.ViewDebug;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
+
 
 /**
  * An extension to TextView that supports the {@link android.widget.Checkable} interface.
@@ -141,7 +141,7 @@ public class CheckedTextView extends TextView implements Checkable {
      *
      * @attr ref android.R.styleable#CheckedTextView_checkMark
      */
-    public void setCheckMarkDrawable(@DrawableRes int resid) {
+    public void setCheckMarkDrawable(int resid) {
         if (resid != 0 && resid == mCheckMarkResource) {
             return;
         }

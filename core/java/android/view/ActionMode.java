@@ -17,8 +17,6 @@
 package android.view;
 
 
-import android.annotation.StringRes;
-
 /**
  * Represents a contextual mode of the user interface. Action modes can be used to provide
  * alternative interaction modes and replace parts of the normal UI until finished.
@@ -82,7 +80,7 @@ public abstract class ActionMode {
      * @see #setTitle(CharSequence)
      * @see #setCustomView(View)
      */
-    public abstract void setTitle(@StringRes int resId);
+    public abstract void setTitle(int resId);
 
     /**
      * Set the subtitle of the action mode. This method will have no visible effect if
@@ -104,7 +102,7 @@ public abstract class ActionMode {
      * @see #setSubtitle(CharSequence)
      * @see #setCustomView(View)
      */
-    public abstract void setSubtitle(@StringRes int resId);
+    public abstract void setSubtitle(int resId);
 
     /**
      * Set whether or not the title/subtitle display for this action mode
