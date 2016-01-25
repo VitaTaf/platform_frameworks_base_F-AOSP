@@ -1024,4 +1024,17 @@
     <string name="volume_stream_muted_dnd" translatable="false">%s silent — Total silence</string>
     <string name="volume_stream_limited_dnd" translatable="false">%s — Priority only</string>
     <string name="volume_stream_vibrate_dnd" translatable="false">%s vibrate — Priority only</string>
+
+    <!-- Warning text when an alarm might be silenced by Do Not Disturb [CHAR LIMIT=NONE] -->
+    <string name="zen_alarm_warning_indef">You won\'t hear your next alarm <xliff:g id="when" example="at 7:00 AM">%1$s</xliff:g> unless you turn this off before then</string>
+
+    <!-- Warning text when an alarm might be silenced by Do Not Disturb due to a time-based condition [CHAR LIMIT=NONE] -->
+    <string name="zen_alarm_warning">You won\'t hear your next alarm <xliff:g id="when" example="at 7:00 AM">%1$s</xliff:g></string>
+
+    <!-- Alarm template for near alarms [CHAR LIMIT=25] -->
+    <string name="alarm_template">at <xliff:g id="when" example="7:00 AM">%1$s</xliff:g></string>
+
+    <!-- Alarm template for far alarms [CHAR LIMIT=25] -->
+    <string name="alarm_template_far">on <xliff:g id="when" example="Fri 7:00 AM">%1$s</xliff:g></string>
+
 </resources>
